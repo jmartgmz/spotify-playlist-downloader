@@ -1,5 +1,5 @@
 """
-Utilities for reading playlist files and user interactions.
+Utilities for reading playlist files, user interactions, and filename handling.
 """
 
 from typing import List
@@ -27,6 +27,38 @@ class PlaylistReader:
                 if line and not line.startswith('#'):
                     playlists.append(line)
         return playlists
+
+
+class FilenameSanitizer:
+    """Handles filename sanitization for compatibility across systems."""
+    
+    # Characters that are invalid in filenames on most filesystems
+    INVALID_CHARS = {
+        ':': '-',
+        '/': '-',
+        '\\': '-',
+        '|': '-',
+        '?': '',
+        '*': '',
+        '"': '',
+        '<': '',
+        '>': ''
+    }
+    
+    @staticmethod
+    def sanitize(filename: str) -> str:
+        """
+        Remove or replace invalid filename characters.
+        
+        Args:
+            filename: Original filename
+            
+        Returns:
+            Sanitized filename safe for all filesystems
+        """
+        for invalid_char, replacement in FilenameSanitizer.INVALID_CHARS.items():
+            filename = filename.replace(invalid_char, replacement)
+        return filename
 
 
 class UserInput:

@@ -8,12 +8,10 @@ import shutil
 import sys
 import os
 from typing import Optional, Dict
-import json
-import glob
 import urllib.request
-from pathlib import Path
 from mutagen.mp3 import MP3
 from mutagen.easyid3 import EasyID3
+from utils import FilenameSanitizer
 
 
 class SpotdlDownloader:
@@ -123,8 +121,8 @@ class SpotdlDownloader:
                     album = track.get('album', 'Unknown')
                     album_year = track.get('album_year', '')
                     
-                    # Sanitize filename - remove/replace invalid characters
-                    safe_title = title.replace(':', '-').replace('/', '-').replace('\\', '-').replace('|', '-').replace('?', '').replace('*', '').replace('"', '').replace('<', '').replace('>', '')
+                    # Sanitize filename using centralized sanitizer
+                    safe_title = FilenameSanitizer.sanitize(title)
                     final_filename = f"{artist} - {safe_title}.mp3"
                     final_filepath = os.path.join(download_folder, final_filename)
                     

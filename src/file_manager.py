@@ -6,6 +6,7 @@ Handles downloading songs, managing folders, and file name normalization.
 import os
 import glob
 from typing import Set, Tuple, Optional
+from utils import FilenameSanitizer
 
 
 class FileManager:
@@ -45,7 +46,7 @@ class FileManager:
         name = track['name']
         
         # Sanitize the song name to match filenames that were actually created
-        safe_name = name.replace(':', '-').replace('/', '-').replace('\\', '-').replace('|', '-').replace('?', '').replace('*', '').replace('"', '').replace('<', '').replace('>', '')
+        safe_name = FilenameSanitizer.sanitize(name)
         
         return f"{artist} - {safe_name}".lower()
 

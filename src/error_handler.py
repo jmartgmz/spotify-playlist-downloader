@@ -3,6 +3,7 @@ Error handling and validation utilities.
 Provides consistent error reporting and input validation.
 """
 
+import os
 from typing import Optional
 from logger import Logger
 
@@ -45,8 +46,6 @@ class ErrorHandler:
         Raises:
             ValidationError: If folder is invalid
         """
-        import os
-        
         try:
             if not os.path.exists(folder_path):
                 if create:
@@ -75,8 +74,6 @@ class ErrorHandler:
         Raises:
             ValidationError: If file is invalid
         """
-        import os
-        
         try:
             if must_exist and not os.path.exists(file_path):
                 raise ValidationError(f"File not found: {file_path}")
