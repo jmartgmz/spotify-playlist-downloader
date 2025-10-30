@@ -15,7 +15,7 @@ class CSVManager:
     def get_csv_filepath(
         playlist_id: str,
         playlist_name: Optional[str] = None,
-        output_folder: str = "playlist_songs"
+        output_folder: Optional[str] = None
     ) -> str:
         """
         Get the CSV filepath for a playlist.
@@ -23,11 +23,15 @@ class CSVManager:
         Args:
             playlist_id: Spotify playlist ID
             playlist_name: Playlist name (preferred for filename)
-            output_folder: Folder to store CSV files
+            output_folder: Folder to store CSV files (if None, uses download folder)
             
         Returns:
             Path to CSV file
         """
+        # Default to current directory if no output folder specified
+        if output_folder is None:
+            output_folder = "."
+            
         if playlist_name:
             safe_name = "".join(c for c in playlist_name if c.isalnum() or c in (" ", "-", "_"))
             filename = os.path.join(output_folder, f"{safe_name.strip()}.csv")
@@ -75,7 +79,7 @@ class CSVManager:
         downloaded_set: set,
         is_song_downloaded_func,
         playlist_name: Optional[str] = None,
-        output_folder: str = "playlist_songs"
+        output_folder: Optional[str] = None
     ) -> None:
         """
         Write playlist songs to a CSV file with their download status.
@@ -86,8 +90,11 @@ class CSVManager:
             downloaded_set: Set of downloaded song filenames
             is_song_downloaded_func: Function to check if song is downloaded
             playlist_name: Playlist name (for filename)
-            output_folder: Folder to save CSV
+            output_folder: Folder to save CSV (if None, saves to current directory)
         """
+        if output_folder is None:
+            output_folder = "."
+            
         os.makedirs(output_folder, exist_ok=True)
         filepath = CSVManager.get_csv_filepath(playlist_id, playlist_name, output_folder)
         

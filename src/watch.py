@@ -84,7 +84,8 @@ def process_playlist_watch(
             tracks,
             downloaded,
             FileManager.is_song_downloaded,
-            playlist_name
+            playlist_name,
+            playlist_download_folder
         )
         
         return len(missing_tracks)

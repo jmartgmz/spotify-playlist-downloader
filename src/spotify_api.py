@@ -41,7 +41,7 @@ class SpotifyClient:
             playlist_id: Spotify playlist ID or URL
             
         Returns:
-            List of track dictionaries with name, artists, id, and url
+            List of track dictionaries with name, artists, id, url, album, cover_art
         """
         results = self.client.playlist_items(playlist_id)
         tracks = []
@@ -49,11 +49,26 @@ class SpotifyClient:
         while results:
             for item in results['items']:
                 track = item['track']
+                
+                # Get album info
+                album_data = track.get('album', {})
+                album_name = album_data.get('name', 'Unknown')
+                album_year = album_data.get('release_date', '')[:4] if album_data.get('release_date') else ''
+                
+                # Get cover art (highest resolution)
+                cover_art_url = None
+                images = album_data.get('images', [])
+                if images:
+                    cover_art_url = images[0]['url']  # First image is largest
+                
                 tracks.append({
                     'name': track['name'],
                     'artists': [artist['name'] for artist in track['artists']],
                     'id': track['id'],
-                    'url': track['external_urls']['spotify']
+                    'url': track['external_urls']['spotify'],
+                    'album': album_name,
+                    'album_year': album_year,
+                    'cover_art_url': cover_art_url
                 })
             
             results = self.client.next(results) if results['next'] else None

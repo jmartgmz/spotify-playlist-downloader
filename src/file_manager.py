@@ -33,16 +33,21 @@ class FileManager:
     def get_song_filename(track: dict) -> str:
         """
         Return normalized filename for a track.
+        Sanitizes special characters that are invalid in filenames.
         
         Args:
             track: Track dictionary with 'artists' and 'name' keys
             
         Returns:
-            Normalized filename string "Artist - Song Name" (lowercase)
+            Normalized filename string "Artist - Song Name" (lowercase, sanitized)
         """
         artist = track['artists'][0] if track['artists'] else 'Unknown'
         name = track['name']
-        return f"{artist} - {name}".lower()
+        
+        # Sanitize the song name to match filenames that were actually created
+        safe_name = name.replace(':', '-').replace('/', '-').replace('\\', '-').replace('|', '-').replace('?', '').replace('*', '').replace('"', '').replace('<', '').replace('>', '')
+        
+        return f"{artist} - {safe_name}".lower()
 
     @staticmethod
     def is_song_downloaded(track: dict, downloaded_set: Set[str]) -> bool:

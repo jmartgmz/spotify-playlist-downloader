@@ -7,7 +7,13 @@ import subprocess
 import shutil
 import sys
 import os
-from typing import Optional
+from typing import Optional, Dict
+import json
+import glob
+import urllib.request
+from pathlib import Path
+from mutagen.mp3 import MP3
+from mutagen.easyid3 import EasyID3
 
 
 class SpotdlDownloader:
@@ -60,25 +66,132 @@ class SpotdlDownloader:
             return None
 
     @staticmethod
-    def download_from_youtube(youtube_url: str, download_folder: str) -> bool:
+    def download_from_youtube(youtube_url: str, download_folder: str, track: Optional[Dict] = None) -> bool:
         """
-        Download a song from a YouTube URL using spotdl.
+        Download audio from YouTube URL using yt-dlp and apply Spotify metadata via ffmpeg.
         
         Args:
             youtube_url: YouTube URL to download from
-            download_folder: Folder to save the download
+            download_folder: Folder to save the downloaded file
+            track: Optional track dict from Spotify with metadata
             
         Returns:
             True if successful, False otherwise
         """
         try:
-            spotdl_path = SpotdlDownloader.find_spotdl()
-            subprocess.run([
-                spotdl_path, youtube_url, '--output', download_folder
-            ], check=True)
+            # Get list of existing files before download
+            existing_files = set(os.listdir(download_folder))
+            
+            # Step 1: Download audio from YouTube using yt-dlp
+            temp_file = os.path.join(download_folder, '%(title)s.%(ext)s')
+            yt_dlp_cmd = [
+                'yt-dlp',
+                '-x',  # Extract audio only
+                '--audio-format', 'mp3',
+                '--audio-quality', '192',
+                '-o', temp_file,
+                youtube_url
+            ]
+            
+            result = subprocess.run(yt_dlp_cmd, capture_output=True, text=True)
+            if result.returncode != 0:
+                print(f"✗ Failed to download from YouTube: {result.stderr}")
+                return False
+            
+            # Get the newly downloaded file (the one that wasn't there before)
+            current_files = set(os.listdir(download_folder))
+            new_files = current_files - existing_files
+            mp3_files = [f for f in new_files if f.endswith('.mp3')]
+            
+            if not mp3_files:
+                print("✗ No MP3 file found after download")
+                return False
+            
+            downloaded_file = os.path.join(download_folder, mp3_files[0])  # Get the newly downloaded file
+            
+            # Step 2: Apply Spotify metadata using mutagen if track info provided
+            if track and isinstance(track, dict):
+                try:
+                    # Handle artists - list of strings
+                    artists_list = track.get('artists', [])
+                    artist = ', '.join(artists_list) if isinstance(artists_list, list) else str(artists_list)
+                    if not artist:
+                        artist = 'Unknown'
+                    
+                    # Get other metadata
+                    title = track.get('name', 'Unknown')
+                    album = track.get('album', 'Unknown')
+                    album_year = track.get('album_year', '')
+                    
+                    # Sanitize filename - remove/replace invalid characters
+                    safe_title = title.replace(':', '-').replace('/', '-').replace('\\', '-').replace('|', '-').replace('?', '').replace('*', '').replace('"', '').replace('<', '').replace('>', '')
+                    final_filename = f"{artist} - {safe_title}.mp3"
+                    final_filepath = os.path.join(download_folder, final_filename)
+                    
+                    # Rename file first
+                    os.rename(downloaded_file, final_filepath)
+                    
+                    # Apply metadata using EasyID3
+                    try:
+                        audio = EasyID3(final_filepath)
+                    except Exception:
+                        # If no ID3 tag exists, create one
+                        audio = EasyID3()
+                    
+                    # Set metadata
+                    audio['title'] = [title]
+                    audio['artist'] = [artist]
+                    audio['album'] = [album]
+                    if album_year:
+                        audio['date'] = [album_year]
+                    
+                    # Save basic metadata
+                    audio.save()
+                    
+                    # Now add cover art using mutagen's ID3 directly
+                    cover_art_url = track.get('cover_art_url')
+                    if cover_art_url:
+                        try:
+                            from mutagen.id3 import ID3
+                            from mutagen.id3._frames import APIC
+                            cover_path = os.path.join(download_folder, 'cover_temp.jpg')
+                            urllib.request.urlretrieve(cover_art_url, cover_path)
+                            
+                            with open(cover_path, 'rb') as cover_file:
+                                cover_data = cover_file.read()
+                            
+                            # Get or create ID3 tags
+                            try:
+                                id3 = ID3(final_filepath)
+                            except Exception:
+                                id3 = ID3()
+                            
+                            # Add cover art
+                            id3.add(APIC(
+                                encoding=3,
+                                mime='image/jpeg',
+                                type=3,
+                                desc='',
+                                data=cover_data
+                            ))
+                            id3.save(final_filepath, v2_version=3)
+                            os.remove(cover_path)
+                        except Exception as e:
+                            print(f"⚠ Could not add cover art: {str(e)}")
+                    
+                    print(f"✓ Downloaded: {final_filename}")
+                    
+                except Exception as e:
+                    print(f"⚠ Could not apply metadata: {str(e)}")
+                    # File is still downloaded and renamed, just without proper metadata
+                    return True
+            else:
+                print(f"✓ Downloaded: {os.path.basename(downloaded_file)}")
+            
             return True
+            
         except Exception as e:
-            print(f"Failed to download from YouTube link: {e}")
+            print(f"✗ Error downloading from YouTube: {str(e)}")
             return False
 
     @staticmethod

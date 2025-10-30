@@ -119,7 +119,7 @@ def process_playlist(
                     Logger.warning(f"Skipped: {track['name']}")
                     track['manually_skipped'] = True
                     stats['skipped'] += 1
-                elif SpotdlDownloader.download_from_youtube(youtube_url, playlist_download_folder):
+                elif SpotdlDownloader.download_from_youtube(youtube_url, playlist_download_folder, track):
                     Logger.success(f"Downloaded: {track['name']}")
                     success = True
                     stats['downloaded'] += 1
@@ -166,7 +166,8 @@ def process_playlist(
             tracks,
             downloaded,
             FileManager.is_song_downloaded,
-            playlist_name
+            playlist_name,
+            playlist_download_folder
         )
         
         return stats

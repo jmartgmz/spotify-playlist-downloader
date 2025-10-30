@@ -3,6 +3,5 @@
 # Lines starting with # are comments
 
 
-# SPANISH
-https://open.spotify.com/playlist/7dBZ71tY1S9gRNl0tX1gJX?si=255dc91cce4141d2
+https://open.spotify.com/playlist/2akgD8RVlr26hHpSgkfrzR?si=03b2e74e1e574498
 
