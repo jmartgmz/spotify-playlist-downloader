@@ -1,0 +1,6 @@
+https://open.spotify.com/playlist/7dBZ71tY1S9gRNl0tX1gJX?si=c15c2efa22734352
+
+# Add more playlist URLs or IDs here
+# Examples:
+# https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M
+# 37i9dQZF1DX0XUsuxWHRQd
