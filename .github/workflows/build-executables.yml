@@ -42,7 +42,9 @@ jobs:
         run: |
           cd build_tools
           chmod +x build.sh
-          ./build.sh
+          bash build.sh
+        env:
+          SKIP_VENV: "true"
       
       - name: Create distribution package
         run: |
@@ -94,6 +96,7 @@ jobs:
           pip install pyinstaller
       
       - name: Build Windows executable
+        shell: cmd
         run: |
           cd build_tools
           call build.bat

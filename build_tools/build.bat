@@ -12,15 +12,20 @@ if not exist "launcher.spec" (
     exit /b 1
 )
 
-REM Activate virtual environment
-echo 🔌 Activating virtual environment...
-cd ..
-if exist ".venv" (
-    call .venv\Scripts\activate
-    echo ✅ Virtual environment activated
+REM Activate virtual environment (skip in CI/CD)
+if "%SKIP_VENV%"=="true" (
+    echo 🔌 Skipping virtual environment (CI/CD mode)
+    cd ..
 ) else (
-    echo ❌ Error: Virtual environment not found. Please run setup first.
-    exit /b 1
+    echo 🔌 Activating virtual environment...
+    cd ..
+    if exist ".venv" (
+        call .venv\Scripts\activate
+        echo ✅ Virtual environment activated
+    ) else (
+        echo ❌ Error: Virtual environment not found. Please run setup first.
+        exit /b 1
+    )
 )
 
 REM Clean previous builds

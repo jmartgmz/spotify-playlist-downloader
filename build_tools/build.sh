@@ -13,15 +13,20 @@ if [ ! -f "launcher.spec" ]; then
     exit 1
 fi
 
-# Activate virtual environment
-echo "🔌 Activating virtual environment..."
-cd ..
-if [ -d ".venv" ]; then
-    source .venv/bin/activate
-    echo "✅ Virtual environment activated"
+# Activate virtual environment (skip in CI/CD)
+if [ "$SKIP_VENV" != "true" ]; then
+    echo "🔌 Activating virtual environment..."
+    cd ..
+    if [ -d ".venv" ]; then
+        source .venv/bin/activate
+        echo "✅ Virtual environment activated"
+    else
+        echo "❌ Error: Virtual environment not found. Please run setup first."
+        exit 1
+    fi
 else
-    echo "❌ Error: Virtual environment not found. Please run setup first."
-    exit 1
+    echo "🔌 Skipping virtual environment (CI/CD mode)"
+    cd ..
 fi
 
 # Clean previous builds
