@@ -48,10 +48,10 @@ jobs:
       
       - name: Create distribution package
         run: |
+          mkdir -p dist/SpotifyPlaylistSync-Linux
+          cp build_tools/dist/SpotifyPlaylistSync dist/SpotifyPlaylistSync-Linux/
+          cp docs/README-DISTRIBUTION.md dist/SpotifyPlaylistSync-Linux/README.md
           cd dist
-          mkdir -p SpotifyPlaylistSync-Linux
-          cp build_tools/dist/SpotifyPlaylistSync SpotifyPlaylistSync-Linux/
-          cp docs/README-DISTRIBUTION.md SpotifyPlaylistSync-Linux/README.md
           tar -czf SpotifyPlaylistSync-Linux.tar.gz SpotifyPlaylistSync-Linux/
       
       - name: Upload Linux artifacts
@@ -100,13 +100,15 @@ jobs:
         run: |
           cd build_tools
           call build.bat
+        env:
+          SKIP_VENV: "true"
       
       - name: Create distribution package
         run: |
+          mkdir dist\SpotifyPlaylistSync-Windows
+          copy build_tools\dist\SpotifyPlaylistSync.exe dist\SpotifyPlaylistSync-Windows\
+          copy docs\README-DISTRIBUTION.md dist\SpotifyPlaylistSync-Windows\README.md
           cd dist
-          mkdir SpotifyPlaylistSync-Windows
-          copy build_tools\dist\SpotifyPlaylistSync.exe SpotifyPlaylistSync-Windows\
-          copy docs\README-DISTRIBUTION.md SpotifyPlaylistSync-Windows\README.md
           powershell Compress-Archive -Path SpotifyPlaylistSync-Windows -DestinationPath SpotifyPlaylistSync-Windows.zip
       
       - name: Upload Windows artifacts
