@@ -1,0 +1,44 @@
+{
+    "_description": "Spotify Playlist Sync Configuration",
+    "_instructions": "Edit these settings to customize the behavior of the application. Remove the leading underscore from any setting to enable it.",
+    
+    "spotify": {
+        "client_id": "",
+        "client_secret": "",
+        "redirect_uri": "http://127.0.0.1:8888/callback"
+    },
+    
+    "paths": {
+        "downloads_folder": "downloaded_songs",
+        "playlists_file": "playlists.txt",
+        "csv_folder": "playlist_songs"
+    },
+    
+    "download": {
+        "quality": "192",
+        "format": "mp3",
+        "include_metadata": true,
+        "include_cover_art": true,
+        "organize_by_playlist": true
+    },
+    
+    "watcher": {
+        "default_interval_minutes": 10,
+        "min_interval_minutes": 1,
+        "max_interval_minutes": 1440
+    },
+    
+    "ui": {
+        "enable_colors": true,
+        "enable_timestamps": true,
+        "enable_progress_bars": true,
+        "enable_debug_mode": false
+    },
+    
+    "advanced": {
+        "auto_filter_results": true,
+        "max_retries": 3,
+        "timeout_seconds": 30,
+        "parallel_downloads": false
+    }
+}

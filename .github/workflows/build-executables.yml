@@ -1,0 +1,181 @@
+name: Build Executables
+
+on:
+  push:
+    branches:
+      - main
+      - refactoring-testing
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  build-linux:
+    name: Build Linux Executable
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r config/requirements.txt
+          pip install pyinstaller
+      
+      - name: Build Linux executable
+        run: |
+          cd build_tools
+          chmod +x build.sh
+          ./build.sh
+      
+      - name: Create distribution package
+        run: |
+          cd dist
+          mkdir -p SpotifyPlaylistSync-Linux
+          cp build_tools/dist/SpotifyPlaylistSync SpotifyPlaylistSync-Linux/
+          cp docs/README-DISTRIBUTION.md SpotifyPlaylistSync-Linux/README.md
+          tar -czf SpotifyPlaylistSync-Linux.tar.gz SpotifyPlaylistSync-Linux/
+      
+      - name: Upload Linux artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: SpotifyPlaylistSync-Linux
+          path: dist/SpotifyPlaylistSync-Linux/
+          retention-days: 30
+      
+      - name: Upload Linux tarball
+        uses: actions/upload-artifact@v3
+        with:
+          name: SpotifyPlaylistSync-Linux-tarball
+          path: dist/SpotifyPlaylistSync-Linux.tar.gz
+          retention-days: 30
+
+  build-windows:
+    name: Build Windows Executable
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      
+      - name: Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~\AppData\Local\pip\Cache
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r config/requirements.txt
+          pip install pyinstaller
+      
+      - name: Build Windows executable
+        run: |
+          cd build_tools
+          call build.bat
+      
+      - name: Create distribution package
+        run: |
+          cd dist
+          mkdir SpotifyPlaylistSync-Windows
+          copy build_tools\dist\SpotifyPlaylistSync.exe SpotifyPlaylistSync-Windows\
+          copy docs\README-DISTRIBUTION.md SpotifyPlaylistSync-Windows\README.md
+          powershell Compress-Archive -Path SpotifyPlaylistSync-Windows -DestinationPath SpotifyPlaylistSync-Windows.zip
+      
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: SpotifyPlaylistSync-Windows
+          path: dist/SpotifyPlaylistSync-Windows/
+          retention-days: 30
+      
+      - name: Upload Windows zip
+        uses: actions/upload-artifact@v3
+        with:
+          name: SpotifyPlaylistSync-Windows-zip
+          path: dist/SpotifyPlaylistSync-Windows.zip
+          retention-days: 30
+
+  create-release:
+    name: Create Release
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: SpotifyPlaylistSync-Linux-tarball
+      
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v3
+        with:
+          name: SpotifyPlaylistSync-Windows-zip
+      
+      - name: Create GitHub Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref_name }}
+          body: |
+            # Spotify Playlist Sync Release
+            
+            ## Downloads
+            - **Linux**: SpotifyPlaylistSync-Linux.tar.gz
+            - **Windows**: SpotifyPlaylistSync-Windows.zip
+            
+            ## Installation
+            
+            ### Linux
+            ```bash
+            tar -xzf SpotifyPlaylistSync-Linux.tar.gz
+            cd SpotifyPlaylistSync-Linux
+            ./SpotifyPlaylistSync
+            ```
+            
+            ### Windows
+            ```cmd
+            Extract SpotifyPlaylistSync-Windows.zip
+            cd SpotifyPlaylistSync-Windows
+            SpotifyPlaylistSync.exe
+            ```
+            
+            See README.md for detailed instructions.
+          draft: false
+          prerelease: false
+      
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            SpotifyPlaylistSync-Linux.tar.gz
+            SpotifyPlaylistSync-Windows.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

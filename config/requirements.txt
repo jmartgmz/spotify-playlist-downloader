@@ -1,0 +1,5 @@
+spotipy         # Spotify Web API client (used for all Spotify API operations)
+spotdl          # Spotify downloader (YouTube/Spotify song download)
+python-dotenv   # Loads .env files for credentials
+yt-dlp          # YouTube downloader (downloads audio from YouTube URLs)
+mutagen         # MP3 metadata editing (for tagging downloaded songs)

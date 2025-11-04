@@ -1,5 +1,0 @@
-# List your Spotify playlist URLs or IDs here, one per line.
-# Lines starting with # are ignored.
-# Example:
-# 37i9dQZF1DXcBWIGoYBM5M
-# https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M
