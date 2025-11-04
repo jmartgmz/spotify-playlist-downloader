@@ -142,13 +142,12 @@ jobs:
         with:
           name: SpotifyPlaylistSync-Windows-zip
       
-      - name: Create GitHub Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release with Assets
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ github.ref_name }}
+          files: |
+            SpotifyPlaylistSync-Linux.tar.gz
+            SpotifyPlaylistSync-Windows.zip
           body: |
             # Spotify Playlist Sync Release
             
@@ -175,12 +174,5 @@ jobs:
             See README.md for detailed instructions.
           draft: false
           prerelease: false
-      
-      - name: Upload Release Assets
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            SpotifyPlaylistSync-Linux.tar.gz
-            SpotifyPlaylistSync-Windows.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
