@@ -14,18 +14,27 @@ if not exist "launcher.spec" (
 
 REM Activate virtual environment (skip in CI/CD when SKIP_VENV=true)
 cd ..
-if "%SKIP_VENV%"=="true" (
-    echo 🔌 Skipping virtual environment (CI/CD mode)
-) else (
-    echo 🔌 Activating virtual environment...
-    if exist ".venv" (
-        call .venv\Scripts\activate
-        echo ✅ Virtual environment activated
-    ) else (
-        echo ❌ Error: Virtual environment not found. Please run setup first.
-        exit /b 1
-    )
+
+REM Debug: Print the SKIP_VENV value
+echo DEBUG: SKIP_VENV value is: "%SKIP_VENV%"
+
+REM Check if we should skip venv
+if /i "%SKIP_VENV%"=="true" (
+    echo 🔌 Skipping virtual environment - CI/CD mode detected
+    goto :skip_venv
 )
+
+REM Try to activate virtual environment
+echo 🔌 Activating virtual environment...
+if exist ".venv" (
+    call .venv\Scripts\activate
+    echo ✅ Virtual environment activated
+) else (
+    echo ❌ Error: Virtual environment not found. Please run setup first.
+    exit /b 1
+)
+
+:skip_venv
 
 REM Clean previous builds
 echo 🧹 Cleaning previous builds...
