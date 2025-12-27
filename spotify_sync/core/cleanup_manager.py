@@ -1,7 +1,7 @@
 """
 Cleanup manager for handling removed songs from playlists.
-Detects songs that were previously downloaded but are no longer in the playlist
-and provides options to clean them up.
+Detects songs that were previously downloaded but are no longer in the playlist,
+and orphaned files that exist but were never tracked in the CSV.
 """
 
 import os
@@ -278,5 +278,140 @@ class CleanupManager:
         
         # Update CSV
         CleanupManager.update_csv_after_cleanup(csv_filepath, removed_songs, action)
+        
+        return stats
+
+    @staticmethod
+    def _normalize_title(title: str) -> str:
+        """
+        Normalize song titles for better matching.
+        
+        Args:
+            title: Song title to normalize
+            
+        Returns:
+            Normalized title
+        """
+        normalized = title.replace('/', '-')
+        normalized = normalized.replace('\\', '-')
+        normalized = normalized.replace(':', '-')
+        normalized = normalized.replace('|', '-')
+        normalized = normalized.replace('?', '')
+        normalized = normalized.replace('*', '')
+        normalized = normalized.replace('"', '')
+        normalized = normalized.replace('<', '')
+        normalized = normalized.replace('>', '')
+        normalized = normalized.replace(' / ', ' ')
+        normalized = ' '.join(normalized.split())
+        return normalized
+
+    @staticmethod
+    def find_orphaned_files(
+        csv_filepath: str,
+        download_folder: str
+    ) -> List[str]:
+        """
+        Find files in the folder that are NOT tracked in the CSV at all.
+        These are orphaned files that may have been manually added or left from failed operations.
+        
+        Args:
+            csv_filepath: Path to CSV file
+            download_folder: Download folder to scan
+            
+        Returns:
+            List of orphaned file paths
+        """
+        if not os.path.exists(csv_filepath) or not os.path.exists(download_folder):
+            return []
+        
+        # Get all tracked songs from CSV (as "Artist - Title")
+        csv_songs = set()
+        csv_status = CSVManager.read_csv_status(csv_filepath)
+        for song_key in csv_status.keys():
+            csv_songs.add(song_key.lower())
+        
+        # Get all audio files in folder
+        audio_extensions = ['.mp3', '.wav', '.flac', '.m4a', '.aac', '.ogg']
+        folder_files = []
+        
+        for file in os.listdir(download_folder):
+            file_path = os.path.join(download_folder, file)
+            if os.path.isfile(file_path):
+                name, ext = os.path.splitext(file)
+                if ext.lower() in audio_extensions:
+                    folder_files.append((name, file_path))
+        
+        # Find orphaned files (files not in CSV)
+        orphaned_files = []
+        
+        for filename, file_path in folder_files:
+            found_match = False
+            
+            # Try exact match first
+            if filename.lower() in csv_songs:
+                found_match = True
+            else:
+                # Try fuzzy matching
+                for csv_song in csv_songs:
+                    if " - " in csv_song:
+                        csv_title = csv_song.split(" - ", 1)[1]
+                        normalized_csv_title = CleanupManager._normalize_title(csv_title)
+                        normalized_filename = CleanupManager._normalize_title(filename)
+                        
+                        if normalized_csv_title in normalized_filename:
+                            found_match = True
+                            break
+            
+            if not found_match:
+                orphaned_files.append(file_path)
+        
+        return orphaned_files
+
+    @staticmethod
+    def cleanup_orphaned_files(
+        csv_filepath: str,
+        download_folder: str,
+        auto_delete: bool = True
+    ) -> Dict:
+        """
+        Clean up orphaned files (files not tracked in CSV).
+        
+        Args:
+            csv_filepath: Path to CSV file
+            download_folder: Download folder to scan
+            auto_delete: If True, automatically delete orphaned files
+            
+        Returns:
+            Dictionary with cleanup stats
+        """
+        orphaned_files = CleanupManager.find_orphaned_files(csv_filepath, download_folder)
+        
+        stats = {
+            'orphaned_files_found': len(orphaned_files),
+            'orphaned_files_deleted': 0
+        }
+        
+        if not orphaned_files:
+            return stats
+        
+        Logger.info(f"Found {len(orphaned_files)} orphaned file(s) not tracked in CSV")
+        
+        if auto_delete:
+            successful = 0
+            failed = 0
+            
+            for file_path in orphaned_files:
+                try:
+                    os.remove(file_path)
+                    Logger.success(f"Deleted orphaned: {os.path.basename(file_path)}")
+                    successful += 1
+                except Exception as e:
+                    Logger.error(f"Failed to delete {os.path.basename(file_path)}: {e}")
+                    failed += 1
+            
+            stats['orphaned_files_deleted'] = successful
+            
+            if successful > 0:
+                Logger.success(f"Cleaned up {successful} orphaned file(s)")
         
         return stats

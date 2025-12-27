@@ -33,12 +33,6 @@ Thumbs.db
 *.egg-info/
 .eggs/
 
-# Build artifacts (keep final distribution)
-build_tools/build/
-build_tools/dist/SpotifyPlaylistSync
-!dist/SpotifyPlaylistSync-Portable-Final.tar.gz
-!dist/SpotifyPlaylistSync-Distribution-Final/
-
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 

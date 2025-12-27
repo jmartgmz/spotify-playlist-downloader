@@ -1,90 +1,99 @@
-# Cleanup Removed Songs Feature
+# Cleanup Feature
 
 ## Overview
-The cleanup feature helps you keep your downloaded music library in sync with your Spotify playlists by detecting songs that have been removed from playlists and providing options to clean up the corresponding files.
+The cleanup feature automatically keeps your downloaded music library in sync with your Spotify playlists. It runs automatically during sync and watch operations, removing files for songs that were deleted from playlists and cleaning up orphaned files that were never properly tracked.
 
 ## How it works
-1. **Detection**: The program compares the current playlist contents with the songs previously tracked in the CSV files
-2. **Identification**: It identifies songs that were previously downloaded but are no longer in the playlist
-3. **File matching**: It finds the actual downloaded files for these removed songs
-4. **User choice**: It asks what you want to do with these files (unless you use auto options)
 
-## Usage Options
+### Two Types of Cleanup
 
-### Interactive Cleanup (prompts for each playlist)
+1. **Removed Songs**: Songs that were in the playlist and downloaded but are no longer in the Spotify playlist
+   - The program compares current playlist contents with previously tracked songs in CSV
+   - Automatically deletes files for removed songs
+   - Updates CSV to reflect the removal
+
+2. **Orphaned Files**: Audio files in the download folder that were never tracked in the CSV
+   - Scans all audio files in playlist folders
+   - Compares with CSV entries using fuzzy matching
+   - Automatically deletes untracked files
+   - Examples: manually copied files, failed CSV writes, corrupted tracking
+
+## Usage
+
+### Automatic Cleanup (Default)
+The cleanup feature runs automatically when you use either `sync` or `watch` commands:
+
 ```bash
-./run.sh sync --cleanup-removed
-# or
-run.bat sync --cleanup-removed
+# Run via launcher
+python launcher.py
+> sync
+
+# Or directly
+python -m spotify_sync.commands.check
 ```
 
-### Automatic Deletion (no prompts)
+Both commands will:
+- Download missing songs
+- Delete files for songs removed from Spotify
+- Delete orphaned files not tracked in CSV
+- Maintain 1:1 sync with Spotify playlists
+
+### Watch Mode
+Continuous monitoring with automatic cleanup:
+
 ```bash
-./run.sh sync --auto-delete-removed
-# or  
-run.bat sync --auto-delete-removed
+# Run via launcher
+python launcher.py
+> watch
+
+# Or directly  
+python -m spotify_sync.commands.watch
 ```
 
-### Keep Files (mark as kept, no deletion)
-```bash
-./run.sh sync --keep-removed
-# or
-run.bat sync --keep-removed
-```
-
-### Combined with other options
-```bash
-./run.sh sync --download-folder /path/to/music --cleanup-removed
-```
-
-## What happens when songs are found
-
-### Interactive mode (--cleanup-removed)
-- Shows list of removed songs
-- Shows how many downloaded files were found
-- Prompts for action:
-  1. Delete the files (free up space)
-  2. Keep the files (they'll remain in your download folder)
-  3. Skip cleanup for now
-
-### Automatic deletion (--auto-delete-removed)
-- Automatically deletes all files for removed songs
-- Shows summary of what was deleted
-
-### Keep removed (--keep-removed)
-- Marks removed songs as "kept after removal"
-- Files remain in download folder
-- No prompts
+Watch mode checks every 5 minutes and automatically:
+- Downloads new songs
+- Removes deleted songs
+- Cleans up orphaned files
 
 ## Example Output
 
 ```
+Processing: spotify:playlist:37i9dQZF1DXcBWIGoYBM5M
+
 Checking for removed songs...
-Found 3 song(s) that were removed from the playlist:
-  1. The Beatles - Hey Jude
-  2. Queen - Bohemian Rhapsody
-  3. Led Zeppelin - Stairway to Heaven
-
-Found 3 downloaded file(s) for these songs.
-
-What would you like to do?
-1. Delete the files (free up space)
-2. Keep the files (they'll remain in your download folder)  
-3. Skip cleanup for now
-Enter your choice (1/2/3): 1
-
+Found 2 song(s) that were removed from the playlist
+Found 2 downloaded file(s) for removal
 Deleted: The Beatles - Hey Jude.mp3
 Deleted: Queen - Bohemian Rhapsody.mp3
-Deleted: Led Zeppelin - Stairway to Heaven.mp3
+Cleaned up 2 removed song(s)
+
+Found 1 orphaned file(s) not tracked in CSV
+Deleted orphaned: Led Zeppelin - Stairway to Heaven.mp3
+Cleaned up 1 orphaned file(s)
 
 Cleanup Summary
-Removed Songs Found: 3
-Files Deleted: 3
-Files Kept: 0
+Removed Songs Found: 2
+Files Deleted: 2
+Orphaned Files Found: 1
+Orphaned Files Deleted: 1
 ```
 
+## Technical Details
+
+### Fuzzy Matching
+The orphaned file detection uses fuzzy matching to handle:
+- Special characters (`/`, `\`, `:`, `|`, `?`, `*`, `"`, `<`, `>`)
+- Extra whitespace
+- Different file naming conventions
+
+### CSV Tracking
+- Removed songs: status is already 'downloaded' in CSV
+- Orphaned files: not in CSV at all
+- CSV is updated after cleanup to reflect changes
+
 ## Notes
-- Only songs that were previously marked as "downloaded" are considered for cleanup
-- The feature uses fuzzy matching to find files that may have slightly different names
-- CSV files are updated to reflect the cleanup actions taken
-- This feature works with existing playlists and doesn't affect the main download functionality
+- Cleanup runs automatically - no flags needed
+- Only affects files in playlist-specific folders
+- Maintains true 1:1 sync with Spotify
+- Uses fuzzy matching to handle filename variations
+- Safe operation - only removes files for confirmed removed/orphaned songs

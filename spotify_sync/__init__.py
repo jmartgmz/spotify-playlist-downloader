@@ -5,6 +5,11 @@ This package provides tools for downloading, organizing, and maintaining
 a local music library synchronized with your Spotify playlists.
 """
 
+import warnings
+# Suppress third-party deprecation warnings globally
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+
 __version__ = "2.0.0"
 __author__ = "Spotify Sync Contributors"
 __description__ = "Automatically sync your Spotify playlists with local downloads"

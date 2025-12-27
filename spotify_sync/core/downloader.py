@@ -3,10 +3,16 @@ Downloader module for spotdl operations.
 Handles downloading songs from Spotify/YouTube URLs.
 """
 
+import warnings
+# Suppress spotdl warnings before any subprocess calls
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+import os
+os.environ['PYTHONWARNINGS'] = 'ignore::UserWarning,ignore::DeprecationWarning'
+
 import subprocess
 import shutil
 import sys
-import os
 from typing import Optional, Dict
 import urllib.request
 from mutagen.mp3 import MP3

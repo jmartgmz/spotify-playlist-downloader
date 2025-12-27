@@ -34,13 +34,11 @@ def process_playlist(
     download_folder: str,
     manual_verify: bool = False,
     manual_link: bool = False,
-    dont_filter: bool = False,
-    cleanup_removed: bool = False,
-    auto_delete_removed: bool = False,
-    keep_removed: bool = False
+    dont_filter: bool = False
 ) -> dict:
     """
     Process a single playlist: fetch tracks, check downloads, download missing songs.
+    Automatically cleans up files for removed songs and orphaned files.
     
     Args:
         spotify_client: SpotifyClient instance
@@ -49,9 +47,6 @@ def process_playlist(
         manual_verify: Show YouTube URL and ask for confirmation
         manual_link: Manually provide YouTube links
         dont_filter: Disable spotdl result filtering
-        cleanup_removed: Check for and handle removed songs
-        auto_delete_removed: Automatically delete files for removed songs
-        keep_removed: Keep files for removed songs without prompting
         
     Returns:
         Dictionary with stats (total_tracks, missing, downloaded, skipped, failed)
@@ -170,9 +165,26 @@ def process_playlist(
                     track['unable_to_find'] = True
                     stats['failed'] += 1
         
-        # Refresh downloads and update CSV
+        # Refresh downloads
         downloaded = FileManager.get_downloaded_songs(playlist_download_folder)
         csv_filepath = CSVManager.get_csv_filepath(playlist_id, playlist_name, playlist_download_folder)
+        
+        # Cleanup removed songs BEFORE updating CSV (automatic)
+        cleanup_stats = CleanupManager.cleanup_removed_songs(
+            tracks,
+            csv_filepath,
+            playlist_download_folder,
+            auto_action='delete'
+        )
+        
+        # Cleanup orphaned files (files not in CSV at all)
+        orphaned_stats = CleanupManager.cleanup_orphaned_files(
+            csv_filepath,
+            playlist_download_folder,
+            auto_delete=True
+        )
+        
+        # Update CSV AFTER cleanup
         CSVManager.write_playlist_songs(
             playlist_id,
             tracks,
@@ -182,29 +194,16 @@ def process_playlist(
             playlist_download_folder
         )
         
-        # Handle cleanup of removed songs if requested
-        if cleanup_removed or auto_delete_removed or keep_removed:
-            auto_action = None
-            if auto_delete_removed:
-                auto_action = 'delete'
-            elif keep_removed:
-                auto_action = 'keep'
-            
-            cleanup_stats = CleanupManager.cleanup_removed_songs(
-                tracks,
-                csv_filepath,
-                playlist_download_folder,
-                auto_action
-            )
-            
-            # Add cleanup info to stats (as separate key to avoid type conflicts)
-            stats.update({
-                'cleanup_performed': True,
-                'removed_songs_found': cleanup_stats['removed_songs_found'],
-                'removed_files_found': cleanup_stats['removed_files_found'],
-                'files_deleted': cleanup_stats['files_deleted'],
-                'files_kept': cleanup_stats['files_kept']
-            })
+        # Add cleanup info to stats
+        stats.update({
+            'cleanup_performed': True,
+            'removed_songs_found': cleanup_stats['removed_songs_found'],
+            'removed_files_found': cleanup_stats['removed_files_found'],
+            'files_deleted': cleanup_stats['files_deleted'],
+            'files_kept': cleanup_stats['files_kept'],
+            'orphaned_files_found': orphaned_stats['orphaned_files_found'],
+            'orphaned_files_deleted': orphaned_stats['orphaned_files_deleted']
+        })
         
         return stats
     
@@ -223,9 +222,6 @@ def main():
     parser.add_argument("--manual-verify", action="store_true", help="Manually verify each YouTube link before downloading")
     parser.add_argument("--dont-filter-results", action="store_true", help="Don't filter spotdl search results")
     parser.add_argument("--manual-link", action="store_true", help="Manually provide YouTube links for each song")
-    parser.add_argument("--cleanup-removed", action="store_true", help="Check for songs removed from playlists and ask to delete files")
-    parser.add_argument("--auto-delete-removed", action="store_true", help="Automatically delete files for songs removed from playlists")
-    parser.add_argument("--keep-removed", action="store_true", help="Keep files for songs removed from playlists (no prompt)")
     
     args = parser.parse_args()
     
@@ -276,7 +272,9 @@ def main():
         'total_failed': 0,
         'total_removed_songs': 0,
         'total_files_deleted': 0,
-        'total_files_kept': 0
+        'total_files_kept': 0,
+        'total_orphaned_files': 0,
+        'total_orphaned_deleted': 0
     }
     
     for idx, playlist_id in enumerate(playlists, 1):
@@ -289,10 +287,7 @@ def main():
                 args.download_folder,
                 manual_verify=args.manual_verify,
                 manual_link=args.manual_link,
-                dont_filter=args.dont_filter_results,
-                cleanup_removed=args.cleanup_removed,
-                auto_delete_removed=args.auto_delete_removed,
-                keep_removed=args.keep_removed
+                dont_filter=args.dont_filter_results
             )
             
             # Accumulate stats
@@ -307,6 +302,8 @@ def main():
                 total_stats['total_removed_songs'] += stats.get('removed_songs_found', 0)
                 total_stats['total_files_deleted'] += stats.get('files_deleted', 0)
                 total_stats['total_files_kept'] += stats.get('files_kept', 0)
+                total_stats['total_orphaned_files'] += stats.get('orphaned_files_found', 0)
+                total_stats['total_orphaned_deleted'] += stats.get('orphaned_files_deleted', 0)
             
         except Exception as e:
             ErrorHandler.handle_exception(e, f"Error processing playlist {playlist_id}")
@@ -322,11 +319,13 @@ def main():
     Logger.summary('Failed', str(total_stats['total_failed']))
     
     # Print cleanup summary if any cleanup was performed
-    if total_stats['total_removed_songs'] > 0:
+    if total_stats['total_removed_songs'] > 0 or total_stats['total_orphaned_files'] > 0:
         Logger.header("Cleanup Summary")
         Logger.summary('Removed Songs Found', str(total_stats['total_removed_songs']))
         Logger.summary('Files Deleted', str(total_stats['total_files_deleted']))
         Logger.summary('Files Kept', str(total_stats['total_files_kept']))
+        Logger.summary('Orphaned Files Found', str(total_stats['total_orphaned_files']))
+        Logger.summary('Orphaned Files Deleted', str(total_stats['total_orphaned_deleted']))
     
     Logger.success("Playlist check complete!")
 
