@@ -1,4 +1,5 @@
 @echo off
+setlocal enabledelayedexpansion
 REM Spotify Playlist Sync Launcher for Windows
 REM This script activates the virtual environment and runs the interactive launcher
 
@@ -59,12 +60,74 @@ if not exist launcher.py (
     exit /b 1
 )
 
+REM Check and guide user through .env creation
 if not exist .env (
-    echo Warning: .env file not found!
-    echo Please copy .env.example to .env and configure your Spotify credentials.
     echo.
+    echo ========================================
+    echo   .env Configuration Setup
+    echo ========================================
+    echo.
+    echo No .env file found. Let's create one!
+    echo.
+    echo You'll need Spotify API credentials. If you don't have them:
+    echo 1. Go to https://developer.spotify.com/dashboard
+    echo 2. Create a new app
+    echo 3. Add redirect URI: http://127.0.0.1:8888/callback
+    echo 4. Copy your Client ID and Client Secret
+    echo.
+    echo See docs\GETTING_SPOTIFY_API.md for detailed instructions.
+    echo.
+    
+    set /p HAS_CREDS="Do you have your Spotify API credentials? (y/n): "
+    
+    if /i "!HAS_CREDS!"=="n" (
+        echo.
+        echo Please get your credentials first, then run this script again.
+        echo Opening documentation in your browser...
+        start https://developer.spotify.com/dashboard
+        pause
+        exit /b 0
+    )
+    
+    if /i "!HAS_CREDS!"=="y" (
+        echo.
+        echo Great! Let's set up your .env file.
+        echo.
+        
+        set /p CLIENT_ID="Enter your Spotify Client ID: "
+        set /p CLIENT_SECRET="Enter your Spotify Client Secret: "
+        
+        echo.
+        echo Creating .env file...
+        
+        >".env" (
+            echo # Spotify API Credentials
+            echo # Get these from https://developer.spotify.com/dashboard
+            echo SPOTIFY_CLIENT_ID=!CLIENT_ID!
+            echo SPOTIFY_CLIENT_SECRET=!CLIENT_SECRET!
+            echo SPOTIFY_REDIRECT_URI=http://127.0.0.1:8888/callback
+            echo.
+            echo # Optional: Customize folders
+            echo # SPOTIFY_DOWNLOADS_FOLDER=downloaded_songs
+            echo # SPOTIFY_PLAYLIST_FOLDER=playlist_songs
+            echo # SPOTIFY_PLAYLISTS_FILE=playlists.txt
+            echo.
+            echo # Optional: Watch interval (minutes^)
+            echo # SPOTIFY_CHECK_INTERVAL=10
+        )
+        
+        echo.
+        echo .env file created successfully!
+        echo.
+        goto :env_created
+    )
+    
+    echo.
+    echo Invalid input. Please run the script again and enter 'y' or 'n'.
     pause
+    exit /b 0
 )
+:env_created
 
 REM Run the launcher
 echo Starting Spotify Playlist Sync...

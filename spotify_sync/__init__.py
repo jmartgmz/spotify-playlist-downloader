@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-__version__ = "2.0.0"
+__version__ = "1.0.0"
 __author__ = "Spotify Sync Contributors"
 __description__ = "Automatically sync your Spotify playlists with local downloads"
 
