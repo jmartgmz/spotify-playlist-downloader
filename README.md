@@ -7,10 +7,38 @@ Automatically sync your Spotify playlists with local downloads. Features intelli
 ## ✨ Quick Start
 
 ### Prerequisites
-- Python 3.8+
+- **Option 1 (Docker):** Docker & Docker Compose
+- **Option 2 (Python):** Python 3.8+
 - Spotify Developer Account (free)
 
-### Installation
+### 🐳 Installation with Docker (Recommended)
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/jmartgmz/spotify-playlist-downloader.git
+   cd spotify-playlist-downloader
+   ```
+
+2. **Configure Spotify API**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Spotify credentials
+   ```
+
+3. **Add playlists**
+   
+   Edit `playlists.txt` with your Spotify playlist URLs or IDs (one per line)
+
+4. **Start with Docker**
+   ```bash
+   docker-compose up -d
+   docker attach spotify-playlist-sync
+   # Now use commands: sync, watch, dashboard, etc.
+   ```
+
+📖 **[Full Docker Guide →](DOCKER.md)**
+
+### 🐍 Installation with Python
 
 1. **Clone the repository**
    ```bash
@@ -149,7 +177,8 @@ spotify-playlist-downloader/
 
 ## 📚 Documentation
 
-- 📋 **[GETTING_SPOTIFY_API.md](docs/GETTING_SPOTIFY_API.md)** - Detailed Spotify API setup guide
+- � **[DOCKER.md](DOCKER.md)** - Complete Docker setup and usage guide
+- �📋 **[GETTING_SPOTIFY_API.md](docs/GETTING_SPOTIFY_API.md)** - Detailed Spotify API setup guide
 - 🧹 **[CLEANUP_FEATURE.md](docs/CLEANUP_FEATURE.md)** - Cleanup removed songs feature guide
 
 ## Configuration

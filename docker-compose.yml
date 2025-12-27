@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  spotify-sync:
+    build: .
+    container_name: spotify-playlist-sync
+    stdin_open: true  # Keep stdin open for interactive commands
+    tty: true         # Allocate a pseudo-TTY
+    volumes:
+      # Mount downloaded songs to persist them
+      - ./downloaded_songs:/app/downloaded_songs
+      # Mount playlist CSVs to persist them
+      - ./playlist_songs:/app/playlist_songs
+      # Mount playlists.txt so you can edit it outside container
+      - ./playlists.txt:/app/playlists.txt
+      # Mount .env file for Spotify credentials
+      - ./.env:/app/.env
+    ports:
+      # Expose dashboard port
+      - "5000:5000"
+    environment:
+      # Environment variables (can override with .env file)
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
