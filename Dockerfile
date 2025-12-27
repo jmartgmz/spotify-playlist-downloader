@@ -21,11 +21,18 @@ COPY . .
 # Create necessary directories for volumes
 RUN mkdir -p /app/downloaded_songs /app/playlist_songs
 
+# Copy and set up entrypoint
+COPY scripts/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
 
 # Expose port for dashboard
 EXPOSE 5000
 
-# Default command runs the interactive launcher
-CMD ["python", "launcher.py"]
+# Use entrypoint script
+ENTRYPOINT ["/entrypoint.sh"]
+
+# Default command - can be overridden
+CMD ["tail", "-f", "/dev/null"]

@@ -396,10 +396,14 @@ def watch_status():
         'status': stats_data['watch_status']
     })
 
-def run_dashboard(host='127.0.0.1', port=5000, debug=False):
+def run_dashboard(host='0.0.0.0', port=5000, debug=False):
     """Run the Flask dashboard."""
     DashboardLogger.info(f"Dashboard starting at http://{host}:{port}")
     app.run(host=host, port=port, debug=debug, threaded=True)
 
 if __name__ == '__main__':
-    run_dashboard(debug=True)
+    # Check if running in Docker
+    in_docker = os.path.exists('/.dockerenv')
+    debug_mode = not in_docker  # Only enable debug mode outside Docker
+    host = '0.0.0.0' if in_docker else '127.0.0.1'
+    run_dashboard(host=host, debug=debug_mode)

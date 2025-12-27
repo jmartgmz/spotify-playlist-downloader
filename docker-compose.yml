@@ -1,11 +1,10 @@
-version: '3.8'
-
 services:
   spotify-sync:
     build: .
     container_name: spotify-playlist-sync
     stdin_open: true  # Keep stdin open for interactive commands
     tty: true         # Allocate a pseudo-TTY
+    command: python -m spotify_sync.dashboard.app  # Auto-start dashboard
     volumes:
       # Mount downloaded songs to persist them
       - ./downloaded_songs:/app/downloaded_songs

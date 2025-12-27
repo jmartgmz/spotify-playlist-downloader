@@ -40,6 +40,21 @@ Automatically sync your Spotify playlists with local downloads. Features intelli
 
 ### 🐍 Installation with Python
 
+#### Windows (Automatic Setup)
+
+**Easiest way - Just double-click:**
+```
+run.bat
+```
+This will automatically create the virtual environment, install dependencies, and launch the program!
+
+**Manual setup (if needed):**
+```
+setup.bat
+```
+
+#### Linux/Mac/Manual Setup
+
 1. **Clone the repository**
    ```bash
    git clone https://github.com/jmartgmz/spotify-playlist-downloader.git
@@ -68,6 +83,11 @@ Automatically sync your Spotify playlists with local downloads. Features intelli
 5. **Add playlists**
    
    Edit `playlists.txt` with your Spotify playlist URLs or IDs (one per line)
+
+6. **Run the launcher**
+   ```bash
+   python launcher.py
+   ```
 
 ## 🎵 Commands
 
@@ -140,14 +160,31 @@ spotify-playlist-downloader/
 │   │   ├── check.py          # Sync command
 │   │   ├── watch.py          # Background monitoring
 │   │   └── update_*.py       # Update commands
+│   ├── dashboard/            # Web dashboard
+│   │   ├── app.py            # Flask application
+│   │   ├── templates/        # HTML templates
+│   │   └── static/           # CSS/JS assets
 │   └── utils/                # Utilities
 ├── docs/                     # Documentation
 │   ├── GETTING_SPOTIFY_API.md
 │   ├── CLEANUP_FEATURE.md
 │   └── example.playlists.txt
+├── downloaded_songs/         # Downloaded music (gitignored)
+│   ├── Playlist Name 1/      # Each playlist gets its own folder
+│   │   ├── Song1.mp3         # Music files
+│   │   ├── Song2.mp3
+│   │   └── Playlist Name 1.csv  # CSV tracking file for this playlist
+│   └── Playlist Name 2/
+├── launcher.py               # Interactive CLI launcher
+├── run.bat                   # Windows launcher (auto-setup)
+├── setup.bat                 # Manual setup script
 ├── requirements.txt          # Python dependencies
-├── playlists.txt             # Your playlist URLs
-└── .env                      # Spotify API credentials
+├── playlists.txt             # Your playlist URLs (gitignored)
+├── .env                      # Spotify API credentials (gitignored)
+├── .env.example              # Environment template
+├── Dockerfile                # Docker image definition
+├── docker-compose.yml        # Docker orchestration
+└── DOCKER.md                 # Docker setup guide
 ```
 
 ## Features
@@ -172,8 +209,8 @@ spotify-playlist-downloader/
 
 ## 📁 Output
 
-- **Downloaded songs:** `downloaded_songs/` (organized by playlist)
-- **Status reports:** `playlist_songs/` (CSV files with download status)
+- **Downloaded songs:** `downloaded_songs/PlaylistName/` (organized by playlist, each contains music files + CSV)
+- **CSV tracking:** Each playlist folder contains a CSV file tracking download status
 
 ## 📚 Documentation
 
@@ -200,9 +237,11 @@ SPOTIFY_REDIRECT_URI=http://127.0.0.1:8888/callback
 
 ## 💡 Tips
 
+- **Windows Users**: Just double-click `run.bat` to get started - it handles everything!
 - **Organization**: Songs are organized into subfolders by playlist name
 - **Watcher**: Runs continuously; press `Ctrl+C` to stop
 - **WSL users**: Use Windows paths like `C:\Users\...\Downloads`
+- **Docker**: See [DOCKER.md](DOCKER.md) for containerized deployment
 
 ## Requirements
 
