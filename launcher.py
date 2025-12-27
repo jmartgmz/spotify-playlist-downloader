@@ -27,6 +27,7 @@ class Colors:
     RESET = '\033[0m'
     DIM = '\033[2m'
     PURPLE = '\033[35m'
+    MAGENTA = '\033[95m'
     ORANGE = '\033[38;5;208m'
 
 
@@ -38,6 +39,7 @@ def print_banner():
     print(f"\n{Colors.BOLD}Available Commands:{Colors.RESET}")
     print(f"  {Colors.GREEN}sync{Colors.RESET} {Colors.DIM}(s){Colors.RESET}      → Download missing songs from playlists")
     print(f"  {Colors.BLUE}watch{Colors.RESET} {Colors.DIM}(w){Colors.RESET}     → Monitor playlists continuously")
+    print(f"  {Colors.MAGENTA}dashboard{Colors.RESET} {Colors.DIM}(dash){Colors.RESET} → Launch web dashboard (localhost:5000)")
     print(f"  {Colors.PURPLE}discover{Colors.RESET} {Colors.DIM}(d){Colors.RESET}  → Auto-discover your Spotify playlists")
     print(f"  {Colors.CYAN}refresh{Colors.RESET} {Colors.DIM}(r){Colors.RESET}   → Update CSV files with current downloads")
     print(f"  {Colors.YELLOW}help{Colors.RESET} {Colors.DIM}(h){Colors.RESET}      → Show detailed help")
@@ -54,6 +56,7 @@ def print_banner():
     print(f"\n{Colors.BOLD}Examples:{Colors.RESET}")
     print(f"  {Colors.DIM}sync{Colors.RESET}")
     print(f"  {Colors.DIM}watch --interval 5{Colors.RESET}")
+    print(f"  {Colors.DIM}dashboard{Colors.RESET}")
     print(f"{Colors.CYAN}{'═' * 70}{Colors.RESET}\n")
 
 
@@ -66,6 +69,7 @@ def print_help():
     print(f"\n{Colors.BOLD}Commands:{Colors.RESET}")
     print(f"  {Colors.GREEN}sync{Colors.RESET}, {Colors.DIM}s{Colors.RESET}       Download missing songs from playlists")
     print(f"  {Colors.BLUE}watch{Colors.RESET}, {Colors.DIM}w{Colors.RESET}      Monitor playlists continuously for new songs")
+    print(f"  {Colors.MAGENTA}dashboard{Colors.RESET}, {Colors.DIM}dash{Colors.RESET} Launch web dashboard (http://localhost:5000)")
     print(f"  {Colors.PURPLE}discover{Colors.RESET}, {Colors.DIM}d{Colors.RESET}   Auto-discover your Spotify playlists")
     print(f"  {Colors.CYAN}refresh{Colors.RESET}, {Colors.DIM}r{Colors.RESET}    Update CSV files with current downloads")
     print(f"  {Colors.YELLOW}help{Colors.RESET}, {Colors.DIM}h{Colors.RESET}       Show this help message")
@@ -80,6 +84,10 @@ def print_help():
     print(f"\n{Colors.BOLD}Watch Options:{Colors.RESET}")
     print(f"  {Colors.DIM}--interval N{Colors.RESET}              Check interval in minutes (default: 10)")
     
+    print(f"\n{Colors.BOLD}Dashboard:{Colors.RESET}")
+    print(f"  {Colors.MAGENTA}dashboard{Colors.RESET}              Launch web interface at http://localhost:5000")
+    print(f"  {Colors.DIM}Control all operations from your browser{Colors.RESET}")
+    
     print(f"\n{Colors.BOLD}Note:{Colors.RESET}")
     print(f"  {Colors.GREEN}✓ Automatic cleanup enabled{Colors.RESET} - Downloads stay in perfect sync with Spotify")
     print(f"  {Colors.DIM}Songs removed from playlists are automatically deleted locally{Colors.RESET}")
@@ -88,6 +96,7 @@ def print_help():
     print(f"  {Colors.GREEN}sync{Colors.RESET}")
     print(f"  {Colors.GREEN}sync{Colors.RESET} {Colors.DIM}--download-folder C:\\Music{Colors.RESET}")
     print(f"  {Colors.BLUE}watch{Colors.RESET} {Colors.DIM}--interval 5{Colors.RESET}")
+    print(f"  {Colors.MAGENTA}dashboard{Colors.RESET}")
     print(f"  {Colors.PURPLE}discover{Colors.RESET}")
     print(f"{Colors.CYAN}{'═' * 70}{Colors.RESET}\n")
 
@@ -117,6 +126,8 @@ def execute_command(command_line):
             's': 'check',
             'watch': 'watch',
             'w': 'watch',
+            'dashboard': 'dashboard',
+            'dash': 'dashboard',
             'discover': 'update_playlists_txt',
             'd': 'update_playlists_txt',
             'refresh': 'update_csv',
@@ -141,6 +152,13 @@ def execute_command(command_line):
             from spotify_sync.commands.check import main as cmd_main
         elif module_name == 'watch':
             from spotify_sync.commands.watch import main as cmd_main
+        elif module_name == 'dashboard':
+            from spotify_sync.dashboard.app import run_dashboard
+            print(f"\n{Colors.BOLD}{Colors.MAGENTA}🌐 Starting Web Dashboard...{Colors.RESET}")
+            print(f"{Colors.GREEN}➜{Colors.RESET} Open your browser to: {Colors.CYAN}http://localhost:5000{Colors.RESET}")
+            print(f"{Colors.DIM}Press Ctrl+C to stop the dashboard{Colors.RESET}\n")
+            run_dashboard()
+            return True
         elif module_name == 'update_playlists_txt':
             from spotify_sync.commands.update_playlists_txt import main as cmd_main
         elif module_name == 'update_csv':

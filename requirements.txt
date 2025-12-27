@@ -4,3 +4,4 @@ python-dotenv
 yt-dlp
 mutagen
 setuptools<81
+flask

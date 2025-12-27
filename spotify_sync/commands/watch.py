@@ -110,8 +110,6 @@ def process_playlist_watch(
             playlist_name,
             playlist_download_folder
         )
-            auto_delete=True
-        )
         
         # Log cleanup if any songs were removed or orphaned files found
         if cleanup_stats['files_deleted'] > 0:

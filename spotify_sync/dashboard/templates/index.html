@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Playlist Sync Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Spotify Playlist Sync</h1>
+            <div class="header-stats">
+                <div class="stat-badge">
+                    <span class="stat-label">Playlists</span>
+                    <span class="stat-value" id="total-playlists">0</span>
+                </div>
+                <div class="stat-badge">
+                    <span class="stat-label">Total Tracks</span>
+                    <span class="stat-value" id="total-tracks">0</span>
+                </div>
+                <div class="stat-badge success">
+                    <span class="stat-label">Downloaded</span>
+                    <span class="stat-value" id="total-downloaded">0</span>
+                </div>
+                <div class="stat-badge warning">
+                    <span class="stat-label">Missing</span>
+                    <span class="stat-value" id="total-missing">0</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="left-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Controls</h2>
+                    </div>
+                    <div class="card-body">
+                        <div class="download-folder-input">
+                            <label for="download-folder">Download Folder (optional):</label>
+                            <input type="text" id="download-folder" placeholder="Leave blank for default">
+                            <div class="input-hint">Default: downloaded_songs</div>
+                        </div>
+                        
+                        <button class="btn btn-primary" onclick="syncPlaylists()">
+                            <span class="btn-icon">🔄</span> Sync Now
+                        </button>
+                        
+                        <button class="btn btn-secondary" onclick="discoverPlaylists()">
+                            <span class="btn-icon">🔍</span> Discover Playlists
+                        </button>
+                        
+                        <div class="watch-controls">
+                            <div class="watch-status">
+                                <span class="status-indicator" id="watch-indicator"></span>
+                                <span id="watch-status-text">Watch Mode: Stopped</span>
+                            </div>
+                            
+                            <div class="watch-interval">
+                                <label for="watch-interval">Check Interval (minutes):</label>
+                                <input type="number" id="watch-interval" value="10" min="1" max="60">
+                            </div>
+                            
+                            <button class="btn btn-success" id="start-watch-btn" onclick="startWatch()">
+                                <span class="btn-icon">▶</span> Start Watch
+                            </button>
+                            <button class="btn btn-danger" id="stop-watch-btn" onclick="stopWatch()" style="display: none;">
+                                <span class="btn-icon">⏸</span> Stop Watch
+                            </button>
+                        </div>
+                        
+                        <div class="last-sync">
+                            Last Sync: <span id="last-sync">Never</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h2>Playlists</h2>
+                        <button class="btn-icon-only" onclick="loadPlaylists()">🔄</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="playlists-list" class="playlists-list">
+                            <div class="loading">Loading playlists...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="right-panel">
+                <div class="card logs-card">
+                    <div class="card-header">
+                        <h2>Activity Log</h2>
+                        <button class="btn-icon-only" onclick="clearLogs()">🗑️</button>
+                    </div>
+                    <div class="card-body">
+                        <div id="logs" class="logs"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
