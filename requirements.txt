@@ -1,0 +1,7 @@
+spotipy
+spotdl
+python-dotenv
+yt-dlp
+mutagen
+setuptools<81
+flask

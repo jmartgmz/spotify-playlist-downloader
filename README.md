@@ -1,268 +1,226 @@
-# Spotify Playlist Sync# Spotify Playlist Sync
+# Spotify Playlist Sync
 
+🎵 **Automatically download songs from your Spotify playlists using YouTube as the source**
 
+Automatically sync your Spotify playlists with local downloads. Features intelligent downloading, cleanup of removed songs, and continuous monitoring.
 
-🎵 **Automatically download songs from your Spotify playlists using YouTube as the source**Automatically sync your Spotify playlists with local downloads. Features intelligent downloading, cleanup of removed songs, and continuous monitoring.
-
-
-
-## Quick Start (Portable Executable)## ✨ Quick Start
-
-
-
-**Want to use it right away? Download the portable executable:****1. Run the setup script (easiest way):**
-
-```bash
-
-1. Download `SpotifyPlaylistSync-Portable-Final.tar.gz` from the `dist/` folder./setup.sh
-
-2. Extract and run `./SpotifyPlaylistSync````
-
-3. Follow the setup wizard - no Python installation needed!
-
-This automatically:
-
-## Development Setup- ✅ Creates a Python virtual environment
-
-- ✅ Installs all dependencies
-
-If you want to run from source or contribute:- ✅ Creates `settings.json` and `playlists.txt` templates
-
-- ✅ Shows next steps
+## ✨ Quick Start
 
 ### Prerequisites
-
-**2. Add your Spotify credentials:**
-
-- Python 3.8+Edit `settings.json` and add your Spotify API credentials from https://developer.spotify.com/dashboard
-
+- **Option 1 (Docker):** Docker & Docker Compose
+- **Option 2 (Python):** Python 3.8+
 - Spotify Developer Account (free)
 
-**3. Add playlists:**
+### 🐳 Installation with Docker (Recommended)
 
-### InstallationRun auto-discovery:
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/jmartgmz/spotify-playlist-downloader.git
+   cd spotify-playlist-downloader
+   ```
 
-```bash
+2. **Configure Spotify API**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Spotify credentials
+   ```
 
-1. **Clone the repository**source .venv/bin/activate
+3. **Add playlists**
+   
+   Edit `playlists.txt` with your Spotify playlist URLs or IDs (one per line)
 
-   ```bash./run.sh discover
+4. **Start with Docker**
+   ```bash
+   docker-compose up -d
+   docker attach spotify-playlist-sync
+   # Now use commands: sync, watch, dashboard, etc.
+   ```
 
-   git clone https://github.com/jmartgmz/spotify-playlist-automatic.git```
+📖 **[Full Docker Guide →](DOCKER.md)**
 
-   cd spotify-playlist-automaticOr manually edit `playlists.txt` with playlist URLs/IDs
+### 🐍 Installation with Python
 
+#### Windows (Automatic Setup)
+
+**Easiest way - Just double-click:**
+```
+run.bat
+```
+This will automatically create the virtual environment, install dependencies, and launch the program!
+
+**Manual setup (if needed):**
+```
+setup.bat
+```
+
+#### Linux/Mac/Manual Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/jmartgmz/spotify-playlist-downloader.git
+   cd spotify-playlist-downloader
+   ```
+
+2. **Set up virtual environment**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # Linux/Mac
+   # or
+   .venv\Scripts\activate     # Windows
+   ```
+
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configure Spotify API**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your Spotify credentials
+   ```
+
+5. **Add playlists**
+   
+   Edit `playlists.txt` with your Spotify playlist URLs or IDs (one per line)
+
+6. **Run the launcher**
+   ```bash
+   python launcher.py
    ```
 
 ## 🎵 Commands
 
-2. **Set up virtual environment**
-
-   ```bash**Main Commands:**
-
-   python -m venv .venv- `sync` (s) - One-time sync: Download missing songs from playlists
-
-   source .venv/bin/activate  # Linux/Mac- `watch` (w) - Background watcher: Monitor for new songs continuously  
-
-   # or- `discover` (d) - Auto-discover Spotify playlists and update playlists.txt
-
-   .venv\Scripts\activate     # Windows- `refresh` (r) - Quick refresh: Update CSV files with current downloads
-
-   ```
+**Main Commands:**
+- **sync** - One-time sync: Download missing songs from playlists (auto-cleans removed songs)
+- **watch** - Background watcher: Monitor for new songs continuously (auto-cleans removed songs)
+- **discover** - Auto-discover Spotify playlists and update playlists.txt
+- **refresh** - Quick refresh: Update CSV files with current downloads
 
 **Using the launcher (recommended):**
-
-3. **Install dependencies**```bash
-
-   ```bash./run.sh sync
-
-   pip install -r config/requirements.txt# Or on Windows:
-
-   ```run.bat sync
-
+```bash
+python launcher.py
+# Then type commands interactively:
+# sync, watch, discover, refresh
 ```
 
-4. **Configure Spotify API**
+**Direct execution:**
+```bash
+python -m spotify_sync.commands.check      # sync
+python -m spotify_sync.commands.watch      # watch
+python -m spotify_sync.commands.update_playlists_txt  # discover
+python -m spotify_sync.commands.update_csv # refresh
+```
 
-   ```bash**Direct execution:**
+## 🔧 Sync Options
 
-   cp .env.example .env```bash
-
-   # Edit .env with your Spotify credentialssource .venv/bin/activate  # Linux/macOS
-
-   ```.venv\Scripts\activate     # Windows
-
-
-
-5. **Run the application**python src/check.py        # Direct script execution
-
-   ```bash```
-
-   python launcher.py
-
-   ```## 🔧 Sync Options
-
-
-
-## Project Structure- `--download-folder FOLDER` - Save downloads to custom location
-
+- `--download-folder FOLDER` - Save downloads to custom location
 - `--manual-verify` - Show YouTube match and ask to confirm before downloading
+- `--manual-link` - Manually provide YouTube links for each song
+- `--dont-filter-results` - Disable spotdl result filtering
 
-```- `--manual-link` - Manually provide YouTube links for each song
+**Note:** Cleanup is automatic! Songs removed from Spotify playlists are automatically deleted locally to keep your library in perfect sync.
 
-📁 spotify-playlist-automatic/- `--cleanup-removed` - Prompt to clean up songs removed from playlists
+## 🎯 Usage Examples
 
-├── 🎵 spotify_sync/          # Core application package- `--auto-delete-removed` - Automatically delete files for removed songs
+```bash
+# Basic sync (automatically cleans removed songs)
+python launcher.py
+# > sync
 
-│   ├── core/                 # Core functionality- `--keep-removed` - Keep files for removed songs without prompting
+# Custom download folder
+python launcher.py
+# > sync --download-folder C:\Music
 
-│   │   ├── spotify_api.py    # Spotify API integration- `--dont-filter-results` - Disable spotdl result filtering
+# Watch for changes every 5 minutes (automatically cleans removed songs)
+python launcher.py
+# > watch --interval 5
 
-│   │   ├── downloader.py     # YouTube download logic
+# Manual verification mode
+python launcher.py
+# > sync --manual-verify
 
-│   │   ├── file_manager.py   # File operations## 🎯 Examples
-
-│   │   ├── csv_manager.py    # Download tracking
-
-│   │   └── cleanup_manager.py # Cleanup operations```bash
-
-│   ├── commands/             # CLI commands# Basic sync
-
-│   │   ├── check.py          # Sync command./run.sh sync
-
-│   │   ├── watch.py          # Background monitoring
-
-│   │   └── update_*.py       # Update commands# Sync with cleanup prompts
-
-│   └── utils/                # Utilities./run.sh sync --cleanup-removed
-
-├── 🛠️ build_tools/            # Executable building
-
-│   ├── launcher.spec         # PyInstaller config# Watch for changes every 5 minutes
-
-│   ├── build.sh             # Linux build script./run.sh watch --interval 5
-
-│   └── build.bat            # Windows build script
-
-├── 📦 dist/                  # Distribution files# Custom download folder with auto-cleanup
-
-│   ├── SpotifyPlaylistSync-Portable-Final.tar.gz./run.sh sync --download-folder /path/to/music --auto-delete-removed
-
-│   └── SpotifyPlaylistSync-Distribution-Final/
-
-├── 📚 docs/                  # Documentation# Manual verification mode
-
-│   ├── README-DISTRIBUTION.md # User guide for portable version./run.sh sync --manual-verify
-
-│   └── development/          # Development docs
-
-├── ⚙️ config/                 # Configuration files# Auto-discover your playlists
-
-│   ├── requirements.txt      # Python dependencies./run.sh discover
-
-│   └── settings.json         # Default settings```
-
-├── 🚀 launcher.py            # Main application launcher
-
-└── 📋 .env.example           # Environment template## ⚙️ Configuration
-
+# Auto-discover your playlists
+python launcher.py
+# > discover
 ```
 
-The app now uses `settings.json` for easy configuration:
+## 📁 Project Structure
+
+```
+spotify-playlist-downloader/
+├── spotify_sync/             # Core application package
+│   ├── core/                 # Core functionality
+│   │   ├── spotify_api.py    # Spotify API integration
+│   │   ├── downloader.py     # YouTube download logic
+│   │   ├── file_manager.py   # File operations
+│   │   ├── csv_manager.py    # Download tracking
+│   │   └── cleanup_manager.py # Cleanup operations
+│   ├── commands/             # CLI commands
+│   │   ├── check.py          # Sync command
+│   │   ├── watch.py          # Background monitoring
+│   │   └── update_*.py       # Update commands
+│   ├── dashboard/            # Web dashboard
+│   │   ├── app.py            # Flask application
+│   │   ├── templates/        # HTML templates
+│   │   └── static/           # CSS/JS assets
+│   └── utils/                # Utilities
+├── docs/                     # Documentation
+│   ├── GETTING_SPOTIFY_API.md
+│   ├── CLEANUP_FEATURE.md
+│   └── example.playlists.txt
+├── downloaded_songs/         # Downloaded music (gitignored)
+│   ├── Playlist Name 1/      # Each playlist gets its own folder
+│   │   ├── Song1.mp3         # Music files
+│   │   ├── Song2.mp3
+│   │   └── Playlist Name 1.csv  # CSV tracking file for this playlist
+│   └── Playlist Name 2/
+├── launcher.py               # Interactive CLI launcher
+├── run.bat                   # Windows launcher (auto-setup)
+├── setup.bat                 # Manual setup script
+├── requirements.txt          # Python dependencies
+├── playlists.txt             # Your playlist URLs (gitignored)
+├── .env                      # Spotify API credentials (gitignored)
+├── .env.example              # Environment template
+├── Dockerfile                # Docker image definition
+├── docker-compose.yml        # Docker orchestration
+└── DOCKER.md                 # Docker setup guide
+```
 
 ## Features
 
-```json
+### 🚀 Core Functions
+- **One-time sync** - Download missing songs from your playlists
+- **Background watcher** - Continuously monitor for new songs
+- **Auto-discovery** - Automatically find all your Spotify playlists
+- **Smart updates** - Only download new/missing songs
 
-### 🚀 Core Functions{
+### 🛠️ Advanced Options
+- **Custom download locations**
+- **Manual verification mode**
+- **Cleanup management** for removed songs
+- **Multiple audio formats**
+- **Progress tracking**
 
-- **One-time sync** - Download missing songs from your playlists    "spotify": {
-
-- **Background watcher** - Continuously monitor for new songs        "client_id": "your_client_id_here",
-
-- **Auto-discovery** - Automatically find all your Spotify playlists        "client_secret": "your_client_secret_here"
-
-- **Smart updates** - Only download new/missing songs    },
-
-    "paths": {
-
-### 🛠️ Advanced Options        "downloads_folder": "downloaded_songs",
-
-- **Custom download locations**        "playlists_file": "playlists.txt"
-
-- **Manual verification mode**    },
-
-- **Cleanup management** for removed songs    "ui": {
-
-- **Multiple audio formats**        "enable_colors": true,
-
-- **Progress tracking**        "enable_timestamps": true,
-
-        "enable_debug_mode": false
-
-### 📊 Smart Management    }
-
-- **CSV tracking** - Keeps track of downloads}
-
-- **Duplicate prevention**```
-
+### 📊 Smart Management
+- **CSV tracking** - Keeps track of downloads
+- **Duplicate prevention**
 - **Error handling** and retry logic
 
-- **Portable configuration**## 📁 Output
+## 📁 Output
 
+- **Downloaded songs:** `downloaded_songs/PlaylistName/` (organized by playlist, each contains music files + CSV)
+- **CSV tracking:** Each playlist folder contains a CSV file tracking download status
 
+## 📚 Documentation
 
-## Building Executable- **Downloaded songs:** `downloaded_songs/` (organized by playlist)
+- � **[DOCKER.md](DOCKER.md)** - Complete Docker setup and usage guide
+- �📋 **[GETTING_SPOTIFY_API.md](docs/GETTING_SPOTIFY_API.md)** - Detailed Spotify API setup guide
+- 🧹 **[CLEANUP_FEATURE.md](docs/CLEANUP_FEATURE.md)** - Cleanup removed songs feature guide
 
-- **Status reports:** `playlist_songs/` (CSV files with download status)
+## Configuration
 
-To create a standalone executable:- **Configuration:** `settings.json` (user-friendly settings)
-
-
-
-```bash## 🚀 New Features
-
-cd build_tools/
-
-./build.sh    # Linux/Mac- **🎨 Better UI**: Color-coded output, progress bars, timestamps
-
-# or- **🔄 Smart Cleanup**: Handle songs removed from playlists
-
-build.bat     # Windows- **⌨️ Command Aliases**: Use short commands (s, w, d, r)
-
-```- **📋 Help System**: Built-in help with examples
-
-- **⚙️ Easy Config**: JSON-based settings instead of environment variables
-
-This creates a ~30MB portable executable with all dependencies bundled.- **🕐 Progress Tracking**: ETA estimates and better progress indicators
-
-
-
-## Commands## 📚 Documentation
-
-
-
-- **`sync`** - Download missing songs from playlists- 📋 **[PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)** - Project layout and module descriptions
-
-- **`watch`** - Monitor playlists continuously- 🔑 **[GETTING_SPOTIFY_API.md](GETTING_SPOTIFY_API.md)** - Detailed Spotify API setup guide
-
-- **`discover`** - Auto-discover your Spotify playlists- 🧹 **[CLEANUP_FEATURE.md](CLEANUP_FEATURE.md)** - Cleanup removed songs feature guide
-
-- **`refresh`** - Update tracking files
-
-- **`setup`** - Run setup wizard## 💡 Tips
-
-- **`help`** - Show detailed help
-
-- **WSL users**: Use Windows paths like `C:\Users\...\Downloads`
-
-## Configuration- **Watcher**: Runs forever; press `Ctrl+C` to stop
-
-- **Organization**: Songs are organized into subfolders by playlist name
-
-### Spotify API Setup- **Backward compatibility**: Old commands (`check`, `update`, `update-csv`) still work
-
-- **Shortcuts**: Type `help` in the launcher for detailed command info
+### Spotify API Setup
 
 1. Go to https://developer.spotify.com/dashboard
 2. Create a new app
@@ -277,24 +235,19 @@ SPOTIFY_CLIENT_SECRET=your_client_secret
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:8888/callback
 ```
 
-## Contributing
+## 💡 Tips
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+- **Windows Users**: Just double-click `run.bat` to get started - it handles everything!
+- **Organization**: Songs are organized into subfolders by playlist name
+- **Watcher**: Runs continuously; press `Ctrl+C` to stop
+- **WSL users**: Use Windows paths like `C:\Users\...\Downloads`
+- **Docker**: See [DOCKER.md](DOCKER.md) for containerized deployment
 
 ## Requirements
 
 - **Python**: 3.8+
-- **Dependencies**: See `config/requirements.txt`
-- **Storage**: ~30MB for app + space for music
+- **Dependencies**: See `requirements.txt`
 - **Internet**: Required for downloads
-
-## License
-
-This project is for personal use. Please respect artists and support them through official channels.
 
 ## Troubleshooting
 
@@ -310,7 +263,9 @@ This project is for personal use. Please respect artists and support them throug
 **Permission errors**
 - Make sure you have write permissions to the download folder
 
-For more help, see the documentation in `docs/` or open an issue.
+## License
+
+This project is for personal use. Please respect artists and support them through official channels.
 
 ---
 

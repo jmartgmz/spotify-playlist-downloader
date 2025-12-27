@@ -15,11 +15,12 @@ warnings.filterwarnings('ignore')
 import os
 import time
 import argparse
-from datetime import datetime
+from datetime import datetime, timedelta
 from spotify_sync.core.spotify_api import SpotifyClient
 from spotify_sync.core.file_manager import FileManager
 from spotify_sync.core.downloader import SpotdlDownloader
 from spotify_sync.core.csv_manager import CSVManager
+from spotify_sync.core.cleanup_manager import CleanupManager
 from spotify_sync.utils.utils import PlaylistReader
 from spotify_sync.core.logger import Logger
 from spotify_sync.utils.error_handler import ErrorHandler, SpotifyError
@@ -82,7 +83,25 @@ def process_playlist_watch(
         # Refresh downloads
         downloaded = FileManager.get_downloaded_songs(playlist_download_folder)
         
-        # Update CSV
+        # Get CSV filepath
+        csv_filepath = CSVManager.get_csv_filepath(playlist_id, playlist_name, playlist_download_folder)
+        
+        # Automatically cleanup removed songs BEFORE updating CSV (keep downloads 1:1 with Spotify)
+        cleanup_stats = CleanupManager.cleanup_removed_songs(
+            tracks,
+            csv_filepath,
+            playlist_download_folder,
+            auto_action='delete'  # Always auto-delete in watch mode
+        )
+        
+        # Cleanup orphaned files (files not in CSV at all)
+        orphaned_stats = CleanupManager.cleanup_orphaned_files(
+            csv_filepath,
+            playlist_download_folder,
+            auto_delete=True
+        )
+        
+        # Update CSV (do this AFTER cleanup so removed songs can be detected)
         CSVManager.write_playlist_songs(
             playlist_id,
             tracks,
@@ -91,6 +110,12 @@ def process_playlist_watch(
             playlist_name,
             playlist_download_folder
         )
+        
+        # Log cleanup if any songs were removed or orphaned files found
+        if cleanup_stats['files_deleted'] > 0:
+            Logger.info(f"Cleaned up {cleanup_stats['files_deleted']} removed song(s)")
+        if orphaned_stats['orphaned_files_deleted'] > 0:
+            Logger.info(f"Cleaned up {orphaned_stats['orphaned_files_deleted']} orphaned file(s)")
         
         return len(missing_tracks)
     
@@ -142,7 +167,8 @@ def main_loop(playlists: list, download_folder: str, check_interval: int) -> Non
             
             # Summary for this iteration
             Logger.success(f"Check complete: Found {total_new} new songs")
-            Logger.info(f"Next check in {check_interval} minute(s) at {datetime.now().strftime('%H:%M:%S')}")
+            next_check_time = (datetime.now() + timedelta(minutes=check_interval)).strftime('%H:%M:%S')
+            Logger.info(f"Next check in {check_interval} minute(s) at {next_check_time}")
             
             time.sleep(check_interval * 60)
     

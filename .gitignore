@@ -1,46 +1,63 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
 
 # Virtual environment
 .venv/
 venv/
 ENV/
+env/
 
 # Environment variables
 .env
-.env.*
+.env.local
+.env.*.local
+!.env.example
 
-# VS Code settings
+# IDE
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # Spotify/spotipy cache
 .cache
+.spotify_cache
+*.cache-*
 
 # OS files
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
-# Downloaded songs
-/downloaded_songs/
+# Downloaded content (user data)
+# This includes both music files and CSV tracking files
+/downloaded_songs/*
+!/downloaded_songs/.gitkeep
 
-# Playlist song lists
-/playlist_songs/
+# User playlists configuration
+playlists.txt
 
-# Python egg files
-*.egg
-*.egg-info/
-.eggs/
+# Logs
+*.log
+logs/
 
-# Build artifacts (keep final distribution)
-build_tools/build/
-build_tools/dist/SpotifyPlaylistSync
-!dist/SpotifyPlaylistSync-Portable-Final.tar.gz
-!dist/SpotifyPlaylistSync-Distribution-Final/
-
-# Jupyter Notebook checkpoints
+# Jupyter Notebook
 .ipynb_checkpoints/
 
-# Log files
-*.log
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Docker volumes
+.docker-data/

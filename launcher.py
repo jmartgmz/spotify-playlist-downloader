@@ -1,361 +1,217 @@
 #!/usr/bin/env python3
+"""
+Spotify Playlist Sync - Interactive Launcher
+Run once and type commands interactively.
+"""
+
+import warnings
+# Suppress all third-party deprecation warnings before any imports
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 import sys
-import warnings
-
-# Suppress warnings BEFORE importing any other modules
-warnings.simplefilter('ignore', UserWarning)
-warnings.simplefilter('ignore', DeprecationWarning)
-warnings.filterwarnings('ignore', category=UserWarning)
-warnings.filterwarnings('ignore', category=DeprecationWarning)
-warnings.filterwarnings('ignore')
-
-import logging
-
-# Set up logging to only show errors and critical messages
-logging.basicConfig(
-    level=logging.CRITICAL,
-    format='%(message)s'
-)
-
-# Suppress verbose logging from dependencies
-logging.getLogger('spotdl').setLevel(logging.CRITICAL)
-logging.getLogger('yt_dlp').setLevel(logging.CRITICAL)
-logging.getLogger('spotipy').setLevel(logging.CRITICAL)
-logging.getLogger('urllib3').setLevel(logging.CRITICAL)
-logging.getLogger('requests').setLevel(logging.CRITICAL)
-logging.getLogger().setLevel(logging.CRITICAL)
-
-import os
-import subprocess
-import importlib
-import importlib.util
 import shlex
+from datetime import datetime
 
-def is_frozen():
-    """Check if running as a PyInstaller executable."""
-    return getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS')
 
-# Add spotify_sync directory to path for imports  
-spotify_sync_dir = os.path.join(os.path.dirname(__file__), 'spotify_sync')
-if os.path.exists(spotify_sync_dir):
-    sys.path.insert(0, os.path.dirname(__file__))
+# ANSI Color codes
+class Colors:
+    HEADER = '\033[95m'
+    BLUE = '\033[94m'
+    CYAN = '\033[96m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    RESET = '\033[0m'
+    DIM = '\033[2m'
+    PURPLE = '\033[35m'
+    MAGENTA = '\033[95m'
+    ORANGE = '\033[38;5;208m'
 
-def show_help():
-    """Display detailed help information."""
-    print("\n" + "="*70)
-    print("SPOTIFY PLAYLIST SYNC - COMMAND HELP")
-    print("="*70)
-    print()
-    print("📱 COMMANDS:")
-    print("  sync (s)     - One-time sync: Download missing songs from playlists")
-    print("  watch (w)    - Background watcher: Monitor for new songs continuously")
-    print("  discover (d) - Auto-discover Spotify playlists and update playlists.txt")
-    print("  refresh (r)  - Quick refresh: Update CSV files with current downloads")
-    print("  setup        - Run the setup wizard again (re-configure)")
-    print("  help         - Show this help message")
-    print("  exit         - Exit the program")
-    print()
-    print("🔧 SYNC OPTIONS:")
-    print("  --download-folder PATH   - Custom download location")
-    print("  --manual-verify          - Ask before downloading each song")
-    print("  --manual-link            - Manually provide YouTube links")
-    print("  --cleanup-removed        - Prompt to clean up songs removed from playlists")
-    print("  --auto-delete-removed    - Auto-delete files for removed songs")
-    print("  --keep-removed           - Keep files for removed songs")
-    print()
-    print("📝 EXAMPLES:")
-    print("  sync                                    - Sync all playlists")
-    print("  sync --manual-verify                   - Sync with manual confirmation")
-    print("  sync --cleanup-removed                 - Sync and handle removed songs")
-    print("  watch --interval 10                    - Watch every 10 minutes")
-    print("  discover                               - Auto-discover your playlists")
-    print()
-    print("💡 TIPS:")
-    print("  • Use short aliases (s, w, d, r) for faster typing")
-    print("  • The watcher runs continuously - press Ctrl+C to stop")
-    print("  • Use 'discover' first to populate playlists.txt automatically")
-    print("  • CSV files track download status for each playlist")
-    print("="*70)
-    print()
 
-def check_and_create_folders():
-    """Check if essential folders exist and create them if needed."""
-    folders = ['downloaded_songs', 'playlist_songs']
-    for folder in folders:
-        if not os.path.exists(folder):
-            os.makedirs(folder)
-            print(f"✅ Created folder: {folder}")
+def print_banner():
+    """Print welcome banner."""
+    print(f"\n{Colors.CYAN}{'═' * 70}{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.GREEN}  🎵  Spotify Playlist Sync  🎵{Colors.RESET}")
+    print(f"{Colors.CYAN}{'═' * 70}{Colors.RESET}")
+    print(f"\n{Colors.BOLD}Available Commands:{Colors.RESET}")
+    print(f"  {Colors.GREEN}sync{Colors.RESET} {Colors.DIM}(s){Colors.RESET}      → Download missing songs from playlists")
+    print(f"  {Colors.BLUE}watch{Colors.RESET} {Colors.DIM}(w){Colors.RESET}     → Monitor playlists continuously")
+    print(f"  {Colors.MAGENTA}dashboard{Colors.RESET} {Colors.DIM}(dash){Colors.RESET} → Launch web dashboard (localhost:5000)")
+    print(f"  {Colors.PURPLE}discover{Colors.RESET} {Colors.DIM}(d){Colors.RESET}  → Auto-discover your Spotify playlists")
+    print(f"  {Colors.CYAN}refresh{Colors.RESET} {Colors.DIM}(r){Colors.RESET}   → Update CSV files with current downloads")
+    print(f"  {Colors.YELLOW}help{Colors.RESET} {Colors.DIM}(h){Colors.RESET}      → Show detailed help")
+    print(f"  {Colors.RED}quit{Colors.RESET} {Colors.DIM}(q){Colors.RESET}      → Exit launcher")
+    
+    print(f"\n{Colors.BOLD}Common Options:{Colors.RESET}")
+    print(f"  {Colors.DIM}--download-folder PATH{Colors.RESET}    Custom download location")
+    print(f"  {Colors.DIM}--manual-verify{Colors.RESET}           Verify YouTube matches")
+    print(f"  {Colors.DIM}--interval N{Colors.RESET}              Check interval (minutes, for watch)")
+    
+    print(f"\n{Colors.BOLD}Note:{Colors.RESET}")
+    print(f"  {Colors.GREEN}Cleanup is automatic!{Colors.RESET} Removed songs are always deleted to stay in sync.")
+    
+    print(f"\n{Colors.BOLD}Examples:{Colors.RESET}")
+    print(f"  {Colors.DIM}sync{Colors.RESET}")
+    print(f"  {Colors.DIM}watch --interval 5{Colors.RESET}")
+    print(f"  {Colors.DIM}dashboard{Colors.RESET}")
+    print(f"{Colors.CYAN}{'═' * 70}{Colors.RESET}\n")
 
-def create_default_playlists_file():
-    """Create a default playlists.txt file with examples."""
-    playlists_content = """# Add your Spotify playlist URLs or IDs here
-# Examples:
-# https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M
-# 37i9dQZF1DX0XUsuxWHRQd
-# spotify:playlist:37i9dQZF1DX4UtSsGT1Sbe
 
-# Uncomment a line below to test:
-# https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M  # Today's Top Hits"""
+def print_help():
+    """Print help message."""
+    print(f"\n{Colors.CYAN}{'═' * 70}{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.BLUE}  📚  Command Reference  📚{Colors.RESET}")
+    print(f"{Colors.CYAN}{'═' * 70}{Colors.RESET}")
     
-    with open('playlists.txt', 'w') as f:
-        f.write(playlists_content)
-    print("✅ Created playlists.txt template")
+    print(f"\n{Colors.BOLD}Commands:{Colors.RESET}")
+    print(f"  {Colors.GREEN}sync{Colors.RESET}, {Colors.DIM}s{Colors.RESET}       Download missing songs from playlists")
+    print(f"  {Colors.BLUE}watch{Colors.RESET}, {Colors.DIM}w{Colors.RESET}      Monitor playlists continuously for new songs")
+    print(f"  {Colors.MAGENTA}dashboard{Colors.RESET}, {Colors.DIM}dash{Colors.RESET} Launch web dashboard (http://localhost:5000)")
+    print(f"  {Colors.PURPLE}discover{Colors.RESET}, {Colors.DIM}d{Colors.RESET}   Auto-discover your Spotify playlists")
+    print(f"  {Colors.CYAN}refresh{Colors.RESET}, {Colors.DIM}r{Colors.RESET}    Update CSV files with current downloads")
+    print(f"  {Colors.YELLOW}help{Colors.RESET}, {Colors.DIM}h{Colors.RESET}       Show this help message")
+    print(f"  {Colors.RED}quit{Colors.RESET}, {Colors.DIM}q, exit{Colors.RESET} Exit the launcher")
+    
+    print(f"\n{Colors.BOLD}Sync Options:{Colors.RESET}")
+    print(f"  {Colors.DIM}--download-folder PATH{Colors.RESET}    Save downloads to custom location")
+    print(f"  {Colors.DIM}--manual-verify{Colors.RESET}           Show YouTube match and confirm before downloading")
+    print(f"  {Colors.DIM}--manual-link{Colors.RESET}             Manually provide YouTube links for each song")
+    print(f"  {Colors.DIM}--dont-filter-results{Colors.RESET}     Disable spotdl result filtering")
+    
+    print(f"\n{Colors.BOLD}Watch Options:{Colors.RESET}")
+    print(f"  {Colors.DIM}--interval N{Colors.RESET}              Check interval in minutes (default: 10)")
+    
+    print(f"\n{Colors.BOLD}Dashboard:{Colors.RESET}")
+    print(f"  {Colors.MAGENTA}dashboard{Colors.RESET}              Launch web interface at http://localhost:5000")
+    print(f"  {Colors.DIM}Control all operations from your browser{Colors.RESET}")
+    
+    print(f"\n{Colors.BOLD}Note:{Colors.RESET}")
+    print(f"  {Colors.GREEN}✓ Automatic cleanup enabled{Colors.RESET} - Downloads stay in perfect sync with Spotify")
+    print(f"  {Colors.DIM}Songs removed from playlists are automatically deleted locally{Colors.RESET}")
+    
+    print(f"\n{Colors.BOLD}Examples:{Colors.RESET}")
+    print(f"  {Colors.GREEN}sync{Colors.RESET}")
+    print(f"  {Colors.GREEN}sync{Colors.RESET} {Colors.DIM}--download-folder C:\\Music{Colors.RESET}")
+    print(f"  {Colors.BLUE}watch{Colors.RESET} {Colors.DIM}--interval 5{Colors.RESET}")
+    print(f"  {Colors.MAGENTA}dashboard{Colors.RESET}")
+    print(f"  {Colors.PURPLE}discover{Colors.RESET}")
+    print(f"{Colors.CYAN}{'═' * 70}{Colors.RESET}\n")
 
-def first_time_setup():
-    """Handle first-time setup wizard."""
-    print("\n" + "="*70)
-    print("🎵 SPOTIFY PLAYLIST SYNC - FIRST TIME SETUP")
-    print("="*70)
-    print()
-    print("Welcome! Let's set up your Spotify Playlist Sync application.")
-    print("This will only take a few minutes.")
-    print()
-    
-    # Step 1: Spotify API Credentials
-    print("📋 STEP 1: Spotify API Credentials")
-    print("-" * 40)
-    print("You'll need to get API credentials from Spotify:")
-    print("1. Go to: https://developer.spotify.com/dashboard")
-    print("2. Click 'Create an App'")
-    print("3. Fill in any name and description")
-    print("4. Add this as a Redirect URI: http://127.0.0.1:8888/callback")
-    print("5. Copy your Client ID and Client Secret")
-    print()
-    
-    client_id = input("Enter your SPOTIFY_CLIENT_ID: ").strip()
-    client_secret = input("Enter your SPOTIFY_CLIENT_SECRET: ").strip()
-    redirect_uri = input("Enter REDIRECT_URI (press Enter for default): ").strip()
-    
-    if not redirect_uri:
-        redirect_uri = "http://127.0.0.1:8888/callback"
-    
-    # Create .env file
-    env_content = f"""SPOTIFY_CLIENT_ID={client_id}
-SPOTIFY_CLIENT_SECRET={client_secret}
-SPOTIFY_REDIRECT_URI={redirect_uri}
 
-# Optional settings (uncomment to use):
-# DOWNLOADS_FOLDER=downloaded_songs
-# UI_ENABLE_DEBUG_MODE=false
-# UI_ENABLE_TIMESTAMPS=true"""
-    
-    with open('.env', 'w') as f:
-        f.write(env_content)
-    print("✅ Credentials saved to .env file")
-    print()
-    
-    # Step 2: Download Location
-    print("📁 STEP 2: Download Location")
-    print("-" * 40)
-    download_folder = input("Download folder (press Enter for 'downloaded_songs'): ").strip()
-    if not download_folder:
-        download_folder = 'downloaded_songs'
-    
-    if os.path.exists(download_folder):
-        print(f"✅ Using existing folder: {download_folder}")
-    else:
-        os.makedirs(download_folder)
-        print(f"✅ Created download folder: {download_folder}")
-    
-    # Create playlist_songs folder too
-    if not os.path.exists('playlist_songs'):
-        os.makedirs('playlist_songs')
-    print()
-    
-    # Step 3: Playlists
-    print("🎵 STEP 3: Spotify Playlists")
-    print("-" * 40)
-    print("You can add playlists in several ways:")
-    print("1. Manual entry (recommended for first time)")
-    print("2. Auto-discovery (requires authorization)")
-    print("3. Skip for now (add to playlists.txt later)")
-    
-    choice = input("Choose option (1/2/3): ").strip()
-    
-    if choice == "1":
-        # Manual playlist entry
-        print()
-        print("Enter your Spotify playlist URLs or IDs (one per line).")
-        print("Examples:")
-        print("  https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M")
-        print("  37i9dQZF1DX0XUsuxWHRQd")
-        print("Press Enter twice when done.")
-        print()
-        
-        playlists = []
-        while True:
-            playlist = input("Playlist URL/ID: ").strip()
-            if not playlist:
-                break
-            playlists.append(playlist)
-            print(f"✅ Added: {playlist}")
-        
-        if playlists:
-            with open('playlists.txt', 'w') as f:
-                f.write('\n'.join(playlists))
-            print(f"✅ Saved {len(playlists)} playlists to playlists.txt")
-        else:
-            create_default_playlists_file()
-    
-    elif choice == "2":
-        print()
-        print("🔍 Auto-discovery will be available after first authorization.")
-        print("We'll create a basic playlists.txt file for now.")
-        create_default_playlists_file()
-        print("💡 Use the 'discover' command later to auto-populate playlists.")
-    
-    else:
-        print()
-        create_default_playlists_file()
-        print("💡 Edit playlists.txt manually or use 'discover' command later.")
-    
-    print()
-    print("🎉 SETUP COMPLETE!")
-    print("="*70)
-    print("Your Spotify Playlist Sync is ready to use!")
-    print()
-    print("📁 Files created:")
-    print("  • .env - Your API credentials")
-    print("  • playlists.txt - Your playlist list")
-    print("  • downloaded_songs/ - Download folder")
-    print()
-    print("🚀 Quick start commands:")
-    print("  • sync - Download missing songs from your playlists")
-    print("  • watch - Monitor playlists for new songs continuously")
-    print("  • discover - Auto-discover your Spotify playlists")
-    print("  • help - Show all available commands")
-    print()
-    print("Let's start downloading your music! 🎵")
-    print()
-
-def check_setup():
-    """Check if setup is complete."""
-    env_exists = os.path.exists('.env')
-    playlists_exists = os.path.exists('playlists.txt')
-    
-    if not env_exists or not playlists_exists:
-        return False
-    
-    # Check if .env has required fields
+def execute_command(command_line):
+    """Execute a command from the interactive prompt."""
     try:
-        with open('.env', 'r') as f:
-            env_content = f.read()
-            if 'SPOTIFY_CLIENT_ID=' in env_content and 'SPOTIFY_CLIENT_SECRET=' in env_content:
-                return True
-    except:
-        pass
-    
-    return False
-
-def run_command(cmd):
-    """Execute a command using the spotify_sync package."""
-    # Use shlex to properly handle quoted paths with spaces
-    try:
-        parts = shlex.split(cmd)
-    except ValueError as e:
-        print(f"Error parsing command: {e}")
-        print("Make sure paths with spaces are quoted: sync --download-folder \"C:\\Users\\Jason Martinez\\Music\"")
-        return
-    
-    if not parts:
-        return
-    
-    command = parts[0].lower()
-    args = parts[1:]
-    
-    # Command mapping
-    command_map = {
-        'sync': 'spotify_sync.commands.check',
-        's': 'spotify_sync.commands.check',
-        'check': 'spotify_sync.commands.check',  # Backward compatibility
-        'watch': 'spotify_sync.commands.watch',
-        'w': 'spotify_sync.commands.watch',
-        'discover': 'spotify_sync.commands.update_playlists_txt',
-        'd': 'spotify_sync.commands.update_playlists_txt',
-        'update': 'spotify_sync.commands.update_playlists_txt',  # Backward compatibility
-        'refresh': 'spotify_sync.commands.update_csv',
-        'r': 'spotify_sync.commands.update_csv'
-    }
-    
-    module_name = command_map.get(command)
-    if not module_name:
-        print(f"Unknown command: {command}")
-        print("Type 'help' for available commands")
-        return
-    
-    try:
-        print(f"[DEBUG] Running module {module_name} with args: {args}")
+        # Parse the command line
+        parts = shlex.split(command_line)
+        if not parts:
+            return True
         
-        # Import and run the module directly
-        module = importlib.import_module(module_name)
+        command = parts[0].lower()
+        args = parts[1:]
         
-        # Set sys.argv for argparse
-        original_argv = sys.argv.copy()
-        sys.argv = [module_name] + args
+        # Handle special commands
+        if command in ['quit', 'q', 'exit']:
+            return False
         
-        print(f"[DEBUG] Executing module with sys.argv: {sys.argv}")
+        if command in ['help', 'h', '?']:
+            print_help()
+            return True
         
-        # Execute the module's main function
-        if hasattr(module, 'main'):
-            module.main()
-        else:
-            print(f"Error: Module {module_name} has no main() function")
+        # Map command aliases
+        command_map = {
+            'sync': 'check',
+            's': 'check',
+            'watch': 'watch',
+            'w': 'watch',
+            'dashboard': 'dashboard',
+            'dash': 'dashboard',
+            'discover': 'update_playlists_txt',
+            'd': 'update_playlists_txt',
+            'refresh': 'update_csv',
+            'r': 'update_csv',
+        }
         
-        # Restore original argv
-        sys.argv = original_argv
-        print(f"[DEBUG] Module execution completed")
+        if command not in command_map:
+            print(f"{Colors.RED}❌ Unknown command:{Colors.RESET} {command}")
+            print(f"{Colors.DIM}Type 'help' for available commands.{Colors.RESET}\n")
+            return True
         
-    except Exception as e:
-        import traceback
-        print(f"Error running command: {e}")
-        print(f"[DEBUG] Full traceback:")
-        traceback.print_exc()
-
-def main():
-    """Main launcher function."""
-    # Check setup status
-    if check_setup():
-        print("🎵 Spotify Playlist Sync")
-        print("All configuration files found. Ready to go!")
-        print()
-    else:
-        first_time_setup()
-    
-    # Interactive loop
-    while True:
-        print()
-        print("="*60)
-        print("🎵 SPOTIFY PLAYLIST SYNC - READY TO USE")
-        print("="*60)
-        print("Type a command (e.g., sync --download-folder /path/to/music)")
-        print()
-        print("📋 Available commands:")
-        print("  sync, watch, discover, refresh, help, exit")
-        print("📝 Aliases: s, w, d, r")
-        print("❓ Type 'help' for detailed descriptions")
-        print()
+        module_name = command_map[command]
         
-        try:
-            cmd = input(">>> ").strip()
-        except (KeyboardInterrupt, EOFError):
-            print("\nGoodbye! 👋")
-            break
+        # Show what we're doing
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        cmd_display = command_line
+        print(f"\n{Colors.DIM}[{timestamp}]{Colors.RESET} {Colors.BOLD}Running:{Colors.RESET} {Colors.CYAN}{cmd_display}{Colors.RESET}")
+        print(f"{Colors.CYAN}{'─' * 70}{Colors.RESET}")
         
-        if cmd.lower() in ['exit', 'quit', 'q']:
-            print("Goodbye! 👋")
-            break
-        elif cmd.lower() == 'help':
-            show_help()
-            continue
-        elif cmd.lower() == 'setup':
-            first_time_setup()
-            continue
-        elif not cmd:
-            continue
+        # Import and run the appropriate command
+        if module_name == 'check':
+            from spotify_sync.commands.check import main as cmd_main
+        elif module_name == 'watch':
+            from spotify_sync.commands.watch import main as cmd_main
+        elif module_name == 'dashboard':
+            from spotify_sync.dashboard.app import run_dashboard
+            print(f"\n{Colors.BOLD}{Colors.MAGENTA}🌐 Starting Web Dashboard...{Colors.RESET}")
+            print(f"{Colors.GREEN}➜{Colors.RESET} Open your browser to: {Colors.CYAN}http://localhost:5000{Colors.RESET}")
+            print(f"{Colors.DIM}Press Ctrl+C to stop the dashboard{Colors.RESET}\n")
+            run_dashboard()
+            return True
+        elif module_name == 'update_playlists_txt':
+            from spotify_sync.commands.update_playlists_txt import main as cmd_main
+        elif module_name == 'update_csv':
+            from spotify_sync.commands.update_csv import main as cmd_main
+        
+        # Replace sys.argv for the command
+        sys.argv = ['launcher.py'] + args
         
         # Run the command
-        run_command(cmd)
+        cmd_main()
+        
+        # Success footer
+        print(f"{Colors.CYAN}{'─' * 70}{Colors.RESET}")
+        print(f"{Colors.GREEN}✓ Command completed{Colors.RESET} {Colors.DIM}[{datetime.now().strftime('%H:%M:%S')}]{Colors.RESET}\n")
+        
+    except KeyboardInterrupt:
+        print(f"\n\n{Colors.YELLOW}⚠️  Command cancelled{Colors.RESET}\n")
+    except Exception as e:
+        print(f"\n{Colors.RED}❌ Error:{Colors.RESET} {e}\n")
+    
+    return True
 
-if __name__ == "__main__":
+
+def main():
+    """Main interactive launcher."""
+    print_banner()
+    
+    try:
+        while True:
+            try:
+                # Colored prompt
+                prompt = f"{Colors.BOLD}{Colors.PURPLE}spotify-sync{Colors.RESET}{Colors.CYAN}>{Colors.RESET} "
+                command_line = input(prompt).strip()
+                
+                if not command_line:
+                    continue
+                
+                # Execute the command
+                if not execute_command(command_line):
+                    print(f"\n{Colors.GREEN}👋 Thanks for using Spotify Playlist Sync!{Colors.RESET}\n")
+                    break
+                    
+            except KeyboardInterrupt:
+                print(f"\n\n{Colors.YELLOW}💡 Tip: Use 'quit' to exit gracefully{Colors.RESET}\n")
+                continue
+            except EOFError:
+                print(f"\n\n{Colors.GREEN}👋 Goodbye!{Colors.RESET}\n")
+                break
+                
+    except Exception as e:
+        print(f"\n{Colors.RED}❌ Launcher error:{Colors.RESET} {e}\n")
+        sys.exit(1)
+
+
+if __name__ == '__main__':
     main()
