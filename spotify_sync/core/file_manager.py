@@ -5,29 +5,62 @@ Handles downloading songs, managing folders, and file name normalization.
 
 import os
 import glob
-from typing import Set, Tuple, Optional
+from typing import Set, Tuple, Optional, Dict
 from spotify_sync.utils.utils import FilenameSanitizer
+from mutagen import File as MutagenFile
 
 
 class FileManager:
     """Manages file and folder operations."""
 
     @staticmethod
-    def get_downloaded_songs(download_folder: str) -> Set[str]:
+    def get_downloaded_songs(download_folder: str) -> Dict[str, dict]:
         """
-        Get set of downloaded songs (normalized filenames).
+        Get dictionary of downloaded songs with their metadata.
         
         Args:
             download_folder: Path to folder containing downloaded songs
             
         Returns:
-            Set of normalized song filenames (lowercase, without extension)
+            Dictionary mapping song title (lowercase) to metadata dict with 'title', 'artist', 'path'
         """
-        downloaded = set()
-        for file in glob.glob(os.path.join(download_folder, '*')):
-            base = os.path.basename(file)
-            name, _ = os.path.splitext(base)
-            downloaded.add(name.lower())
+        downloaded = {}
+        audio_extensions = ['.mp3', '.wav', '.flac', '.m4a', '.aac', '.ogg']
+        
+        for file in os.listdir(download_folder):
+            file_path = os.path.join(download_folder, file)
+            if not os.path.isfile(file_path):
+                continue
+            
+            name, ext = os.path.splitext(file)
+            if ext.lower() not in audio_extensions:
+                continue
+            
+            # Try to read metadata
+            try:
+                audio = MutagenFile(file_path, easy=True)
+                if audio and 'title' in audio:
+                    title = audio.get('title', [None])[0]
+                    artist = audio.get('artist', [None])[0] if 'artist' in audio else None
+                    
+                    if title:
+                        # Store by lowercase title for matching
+                        downloaded[title.lower().strip()] = {
+                            'title': title,
+                            'artist': artist if artist else '',
+                            'path': file_path
+                        }
+                        continue
+            except:
+                pass
+            
+            # Fallback: use filename if metadata not available
+            downloaded[name.lower()] = {
+                'title': name,
+                'artist': '',
+                'path': file_path
+            }
+        
         return downloaded
 
     @staticmethod
@@ -51,34 +84,29 @@ class FileManager:
         return f"{artist} - {safe_name}".lower()
 
     @staticmethod
-    def is_song_downloaded(track: dict, downloaded_set: Set[str]) -> bool:
+    def is_song_downloaded(track: dict, downloaded_dict: Dict[str, dict]) -> bool:
         """
-        Check if a song is downloaded using fuzzy matching.
-        Handles multiple artist formats and file name variations.
+        Check if a song is downloaded by comparing metadata.
         
         Args:
-            track: Track dictionary
-            downloaded_set: Set of downloaded song filenames
+            track: Track dictionary with 'name' and 'artists' keys
+            downloaded_dict: Dictionary of downloaded songs from get_downloaded_songs()
             
         Returns:
-            True if song is found in downloaded set
+            True if song is found in downloaded dict
         """
-        song_name = track['name']
+        track_title = track.get('name', '').lower().strip()
         
-        # Try exact match with first artist
-        exact_match = FileManager.get_song_filename(track)
-        if exact_match in downloaded_set:
+        if not track_title:
+            return False
+        
+        # Direct title match (most reliable)
+        if track_title in downloaded_dict:
             return True
         
-        # Try with all artists combined
-        all_artists = ", ".join([artist for artist in track['artists']])
-        all_artists_match = f"{all_artists} - {song_name}".lower()
-        if all_artists_match in downloaded_set:
-            return True
-        
-        # Try matching just the song title
-        for downloaded_file in downloaded_set:
-            if song_name.lower() in downloaded_file:
+        # Partial title match as fallback
+        for downloaded_title in downloaded_dict.keys():
+            if track_title in downloaded_title or downloaded_title in track_title:
                 return True
         
         return False

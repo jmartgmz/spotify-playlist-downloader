@@ -209,7 +209,7 @@ class SpotdlDownloader:
             return False
 
     @staticmethod
-    def download_from_spotify(track: dict, download_folder: str, dont_filter: bool = False) -> bool:
+    def download_from_spotify(track: dict, download_folder: str, dont_filter: bool = False) -> tuple[bool, str]:
         """
         Download a song from Spotify URL using spotdl.
         
@@ -219,7 +219,7 @@ class SpotdlDownloader:
             dont_filter: Whether to disable result filtering
             
         Returns:
-            True if successful, False otherwise
+            Tuple of (success: bool, error_message: str)
         """
         try:
             # Get list of existing MP3 files before download
@@ -234,7 +234,14 @@ class SpotdlDownloader:
             if dont_filter:
                 cmd.append('--dont-filter-results')
             
-            subprocess.run(cmd, check=True)
+            # Capture stderr to get error messages, suppress stdout
+            result = subprocess.run(
+                cmd, 
+                stdout=subprocess.DEVNULL, 
+                stderr=subprocess.PIPE,
+                text=True,
+                check=False
+            )
             
             # Verify that a new MP3 file was actually created
             current_mp3s = set()
@@ -245,9 +252,26 @@ class SpotdlDownloader:
             
             new_mp3s = current_mp3s - existing_mp3s
             
-            # Return True only if at least one new MP3 was created
-            return len(new_mp3s) > 0
+            # If download failed, extract the reason
+            if len(new_mp3s) == 0:
+                error_msg = ""
+                
+                if result.stderr:
+                    if 'Could not match any of the results on YouTube' in result.stderr:
+                        error_msg = "No matching YouTube video found"
+                    elif 'Unable to get audio stream' in result.stderr:
+                        error_msg = "Unable to extract audio from YouTube"
+                    elif 'LookupError' in result.stderr:
+                        error_msg = "No matching YouTube video found"
+                    elif 'HTTP Error 429' in result.stderr or 'Too Many Requests' in result.stderr:
+                        error_msg = "YouTube rate limit reached"
+                    elif result.returncode != 0:
+                        error_msg = f"Download error (code {result.returncode})"
+                
+                return False, error_msg
+            
+            # Return True if at least one new MP3 was created
+            return True, ""
             
         except Exception as e:
-            print(f"Failed to download {track['name']}: {e}")
-            return False
+            return False, str(e)

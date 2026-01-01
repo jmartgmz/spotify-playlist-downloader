@@ -12,6 +12,8 @@ from spotify_sync.core.csv_manager import CSVManager
 from spotify_sync.core.file_manager import FileManager
 from spotify_sync.utils.utils import UserInput, FilenameSanitizer
 from spotify_sync.core.logger import Logger
+from mutagen.easyid3 import EasyID3
+from mutagen import File as MutagenFile
 
 
 class CleanupManager:
@@ -25,6 +27,7 @@ class CleanupManager:
     ) -> Tuple[List[Dict], List[str]]:
         """
         Find songs that were previously in the playlist but are now removed.
+        Uses metadata comparison to handle filename sanitization issues.
         
         Args:
             current_tracks: List of current tracks in the playlist
@@ -37,57 +40,69 @@ class CleanupManager:
         if not os.path.exists(csv_filepath):
             return [], []
         
-        # Get current track identifiers
-        current_track_ids = set()
-        current_filenames = set()
-        
+        # Build set of current tracks using (artist, title) tuples
+        current_songs = set()
         for track in current_tracks:
-            # Use track ID if available, otherwise use filename
-            if 'id' in track:
-                current_track_ids.add(track['id'])
-            filename = FileManager.get_song_filename(track)
-            current_filenames.add(filename)
+            artist = track['artists'][0].lower().strip() if track.get('artists') else ''
+            title = track.get('name', '').lower().strip()
+            if title:
+                current_songs.add((artist, title))
         
         # Read previous CSV data
-        csv_status = CSVManager.read_csv_status(csv_filepath)
+        csv_songs = []
+        try:
+            with open(csv_filepath, 'r', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    artist = row.get('Artist', '').lower().strip()
+                    title = row.get('Song Title', '').lower().strip()
+                    status = row.get('Status', '')
+                    if title and status == 'downloaded':
+                        csv_songs.append({
+                            'artist': artist,
+                            'title': title,
+                            'artist_original': row.get('Artist', ''),
+                            'title_original': row.get('Song Title', '')
+                        })
+        except Exception as e:
+            Logger.warning(f"Error reading CSV for removed songs check: {e}")
+            return [], []
         
         removed_songs = []
         removed_files = []
         
-        # Check each previously tracked song
-        for song_key, status in csv_status.items():
-            # Skip if song is still in playlist
-            found_in_current = False
-            for track in current_tracks:
-                current_key = FileManager.get_song_filename(track)
-                if current_key == song_key:
-                    found_in_current = True
-                    break
+        # Check each CSV song against current playlist
+        for csv_song in csv_songs:
+            artist = csv_song['artist']
+            title = csv_song['title']
             
-            if found_in_current:
-                continue
-                
-            # Only consider songs that were previously downloaded
-            if status == 'downloaded':
-                # Parse the song key back to get artist and title
-                if ' - ' in song_key:
-                    artist, title = song_key.split(' - ', 1)
-                else:
-                    artist, title = 'Unknown', song_key
-                
+            # Check if this song is still in the current playlist
+            if (artist, title) not in current_songs:
+                # Song was removed from playlist, find the actual file
                 song_data = {
-                    'filename': song_key,
-                    'artist': artist,
-                    'title': title,
-                    'status': status
+                    'artist': csv_song['artist_original'],
+                    'title': csv_song['title_original'],
+                    'status': 'downloaded'
                 }
                 removed_songs.append(song_data)
                 
-                # Check if the actual file exists
-                matching_files = CleanupManager._find_matching_files(
-                    song_key, download_folder
-                )
-                removed_files.extend(matching_files)
+                # Find matching files by metadata
+                audio_extensions = ['.mp3', '.wav', '.flac', '.m4a', '.aac', '.ogg']
+                for file in os.listdir(download_folder):
+                    file_path = os.path.join(download_folder, file)
+                    if not os.path.isfile(file_path):
+                        continue
+                    
+                    name, ext = os.path.splitext(file)
+                    if ext.lower() not in audio_extensions:
+                        continue
+                    
+                    # Check metadata
+                    metadata = CleanupManager._get_file_metadata(file_path)
+                    if metadata and metadata['title'] == title:
+                        # Match on title (artist might vary slightly)
+                        removed_files.append(file_path)
+                        break
         
         return removed_songs, removed_files
 
@@ -307,6 +322,36 @@ class CleanupManager:
         return normalized
 
     @staticmethod
+    def _get_file_metadata(file_path: str) -> Optional[Dict[str, str]]:
+        """
+        Extract metadata (artist, title) from an audio file.
+        
+        Args:
+            file_path: Path to the audio file
+            
+        Returns:
+            Dictionary with 'artist' and 'title' keys, or None if unable to read
+        """
+        try:
+            audio = MutagenFile(file_path, easy=True)
+            if audio is None:
+                return None
+            
+            # Get title and artist from tags
+            title = audio.get('title', [None])[0] if 'title' in audio else None
+            artist = audio.get('artist', [None])[0] if 'artist' in audio else None
+            
+            if title:
+                return {
+                    'title': title.lower().strip(),
+                    'artist': artist.lower().strip() if artist else ''
+                }
+            return None
+        except Exception as e:
+            # If we can't read metadata, return None
+            return None
+
+    @staticmethod
     def find_orphaned_files(
         csv_filepath: str,
         download_folder: str,
@@ -314,7 +359,7 @@ class CleanupManager:
     ) -> List[str]:
         """
         Find files in the folder that are NOT tracked in the CSV or current playlist.
-        These are orphaned files that may have been manually added or left from failed operations.
+        Uses metadata (ID3 tags) comparison instead of filename comparison for reliability.
         
         Args:
             csv_filepath: Path to CSV file
@@ -327,61 +372,77 @@ class CleanupManager:
         if not os.path.exists(download_folder):
             return []
         
-        # Get all tracked song titles from CSV AND current tracks
-        tracked_titles = set()
+        # Build a set of tracked songs using (artist, title) tuples from CSV and current tracks
+        tracked_songs = set()
         
-        # Add titles from CSV if it exists
+        # Add songs from CSV if it exists
         if os.path.exists(csv_filepath):
             try:
                 with open(csv_filepath, 'r', encoding='utf-8') as f:
                     reader = csv.DictReader(f)
                     for row in reader:
-                        title = row.get('Song Title', '')
-                        
+                        artist = row.get('Artist', '').lower().strip()
+                        title = row.get('Song Title', '').lower().strip()
                         if title:
-                            # Sanitize and store the title
-                            safe_title = FilenameSanitizer.sanitize(title)
-                            tracked_titles.add(safe_title.lower())
+                            tracked_songs.add((artist, title))
+                            # Also add just the title for partial matching
+                            tracked_songs.add(('', title))
             except Exception as e:
                 Logger.warning(f"Error reading CSV for orphaned file check: {e}")
         
-        # Add titles from current tracks (including newly downloaded ones)
+        # Add songs from current tracks (including newly downloaded ones)
         if current_tracks:
             for track in current_tracks:
-                title = track.get('name', '')
+                artist = track['artists'][0].lower().strip() if track.get('artists') else ''
+                title = track.get('name', '').lower().strip()
                 if title:
-                    safe_title = FilenameSanitizer.sanitize(title)
-                    tracked_titles.add(safe_title.lower())
+                    tracked_songs.add((artist, title))
+                    # Also add just the title for partial matching
+                    tracked_songs.add(('', title))
         
         # Get all audio files in folder
         audio_extensions = ['.mp3', '.wav', '.flac', '.m4a', '.aac', '.ogg']
-        folder_files = []
+        orphaned_files = []
         
         for file in os.listdir(download_folder):
             file_path = os.path.join(download_folder, file)
-            if os.path.isfile(file_path):
-                name, ext = os.path.splitext(file)
-                if ext.lower() in audio_extensions:
-                    folder_files.append((name, file_path))
-        
-        # Find orphaned files (files not in CSV or current tracks)
-        orphaned_files = []
-        
-        for filename, file_path in folder_files:
-            # Extract the title from the filename (everything after " - ")
-            if " - " in filename:
-                file_title = filename.split(" - ", 1)[1].lower()
-            else:
-                file_title = filename.lower()
+            if not os.path.isfile(file_path):
+                continue
             
-            # Check if this song title is tracked
-            found_match = False
-            for tracked_title in tracked_titles:
-                if tracked_title in file_title or file_title in tracked_title:
-                    found_match = True
-                    break
+            name, ext = os.path.splitext(file)
+            if ext.lower() not in audio_extensions:
+                continue
             
-            if not found_match:
+            # Read metadata from the file
+            metadata = CleanupManager._get_file_metadata(file_path)
+            
+            if metadata is None:
+                # If we can't read metadata, fall back to filename matching as last resort
+                file_title = name.split(" - ", 1)[1].lower().strip() if " - " in name else name.lower().strip()
+                # Check if any tracked song title matches
+                is_tracked = any(file_title == tracked_title or tracked_title in file_title 
+                               for _, tracked_title in tracked_songs if tracked_title)
+                if not is_tracked:
+                    orphaned_files.append(file_path)
+                continue
+            
+            # Check if this file's metadata matches any tracked song
+            file_artist = metadata['artist']
+            file_title = metadata['title']
+            
+            # Try exact match with artist + title
+            is_tracked = (file_artist, file_title) in tracked_songs
+            
+            # Also try title-only match (in case artist format differs)
+            if not is_tracked:
+                is_tracked = ('', file_title) in tracked_songs
+            
+            # If still not matched, try partial title match
+            if not is_tracked:
+                is_tracked = any(tracked_title and (tracked_title in file_title or file_title in tracked_title)
+                               for _, tracked_title in tracked_songs if tracked_title)
+            
+            if not is_tracked:
                 orphaned_files.append(file_path)
         
         return orphaned_files
