@@ -5,11 +5,12 @@ and orphaned files that exist but were never tracked in the CSV.
 """
 
 import os
+import csv
 import glob
 from typing import Set, List, Dict, Tuple, Optional
 from spotify_sync.core.csv_manager import CSVManager
 from spotify_sync.core.file_manager import FileManager
-from spotify_sync.utils.utils import UserInput
+from spotify_sync.utils.utils import UserInput, FilenameSanitizer
 from spotify_sync.core.logger import Logger
 
 
@@ -308,27 +309,49 @@ class CleanupManager:
     @staticmethod
     def find_orphaned_files(
         csv_filepath: str,
-        download_folder: str
+        download_folder: str,
+        current_tracks: Optional[List[dict]] = None
     ) -> List[str]:
         """
-        Find files in the folder that are NOT tracked in the CSV at all.
+        Find files in the folder that are NOT tracked in the CSV or current playlist.
         These are orphaned files that may have been manually added or left from failed operations.
         
         Args:
             csv_filepath: Path to CSV file
             download_folder: Download folder to scan
+            current_tracks: Optional list of current tracks in the playlist
             
         Returns:
             List of orphaned file paths
         """
-        if not os.path.exists(csv_filepath) or not os.path.exists(download_folder):
+        if not os.path.exists(download_folder):
             return []
         
-        # Get all tracked songs from CSV (as "Artist - Title")
-        csv_songs = set()
-        csv_status = CSVManager.read_csv_status(csv_filepath)
-        for song_key in csv_status.keys():
-            csv_songs.add(song_key.lower())
+        # Get all tracked song titles from CSV AND current tracks
+        tracked_titles = set()
+        
+        # Add titles from CSV if it exists
+        if os.path.exists(csv_filepath):
+            try:
+                with open(csv_filepath, 'r', encoding='utf-8') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        title = row.get('Song Title', '')
+                        
+                        if title:
+                            # Sanitize and store the title
+                            safe_title = FilenameSanitizer.sanitize(title)
+                            tracked_titles.add(safe_title.lower())
+            except Exception as e:
+                Logger.warning(f"Error reading CSV for orphaned file check: {e}")
+        
+        # Add titles from current tracks (including newly downloaded ones)
+        if current_tracks:
+            for track in current_tracks:
+                title = track.get('name', '')
+                if title:
+                    safe_title = FilenameSanitizer.sanitize(title)
+                    tracked_titles.add(safe_title.lower())
         
         # Get all audio files in folder
         audio_extensions = ['.mp3', '.wav', '.flac', '.m4a', '.aac', '.ogg']
@@ -341,26 +364,22 @@ class CleanupManager:
                 if ext.lower() in audio_extensions:
                     folder_files.append((name, file_path))
         
-        # Find orphaned files (files not in CSV)
+        # Find orphaned files (files not in CSV or current tracks)
         orphaned_files = []
         
         for filename, file_path in folder_files:
-            found_match = False
-            
-            # Try exact match first
-            if filename.lower() in csv_songs:
-                found_match = True
+            # Extract the title from the filename (everything after " - ")
+            if " - " in filename:
+                file_title = filename.split(" - ", 1)[1].lower()
             else:
-                # Try fuzzy matching
-                for csv_song in csv_songs:
-                    if " - " in csv_song:
-                        csv_title = csv_song.split(" - ", 1)[1]
-                        normalized_csv_title = CleanupManager._normalize_title(csv_title)
-                        normalized_filename = CleanupManager._normalize_title(filename)
-                        
-                        if normalized_csv_title in normalized_filename:
-                            found_match = True
-                            break
+                file_title = filename.lower()
+            
+            # Check if this song title is tracked
+            found_match = False
+            for tracked_title in tracked_titles:
+                if tracked_title in file_title or file_title in tracked_title:
+                    found_match = True
+                    break
             
             if not found_match:
                 orphaned_files.append(file_path)
@@ -371,20 +390,22 @@ class CleanupManager:
     def cleanup_orphaned_files(
         csv_filepath: str,
         download_folder: str,
-        auto_delete: bool = True
+        auto_delete: bool = True,
+        current_tracks: Optional[List[dict]] = None
     ) -> Dict:
         """
-        Clean up orphaned files (files not tracked in CSV).
+        Clean up orphaned files (files not tracked in CSV or current playlist).
         
         Args:
             csv_filepath: Path to CSV file
             download_folder: Download folder to scan
             auto_delete: If True, automatically delete orphaned files
+            current_tracks: Optional list of current tracks in the playlist
             
         Returns:
             Dictionary with cleanup stats
         """
-        orphaned_files = CleanupManager.find_orphaned_files(csv_filepath, download_folder)
+        orphaned_files = CleanupManager.find_orphaned_files(csv_filepath, download_folder, current_tracks)
         
         stats = {
             'orphaned_files_found': len(orphaned_files),

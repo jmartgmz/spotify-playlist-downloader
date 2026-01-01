@@ -62,9 +62,17 @@ class SpotdlDownloader:
             if dont_filter:
                 cmd.append('--dont-filter-results')
             
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True, stderr=subprocess.DEVNULL)
+            # Only capture stdout, discard stderr (which has progress messages)
+            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, check=False)
+            
+            if result.returncode != 0:
+                return None
+                
             youtube_url = result.stdout.strip()
-            return youtube_url if youtube_url else None
+            # Validate it's actually a URL
+            if youtube_url and youtube_url.startswith('http'):
+                return youtube_url
+            return None
         except Exception as e:
             print(f"Failed to get YouTube URL for {track['name']}: {e}")
             return None
@@ -99,7 +107,7 @@ class SpotdlDownloader:
                 youtube_url
             ]
             
-            result = subprocess.run(yt_dlp_cmd, capture_output=True, text=True, stderr=subprocess.DEVNULL)
+            result = subprocess.run(yt_dlp_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
             if result.returncode != 0:
                 print(f"✗ Failed to download from YouTube: {result.stderr}")
                 return False
@@ -214,13 +222,32 @@ class SpotdlDownloader:
             True if successful, False otherwise
         """
         try:
+            # Get list of existing MP3 files before download
+            existing_mp3s = set()
+            if os.path.exists(download_folder):
+                for file in os.listdir(download_folder):
+                    if file.endswith('.mp3'):
+                        existing_mp3s.add(file)
+            
             spotdl_path = SpotdlDownloader.find_spotdl()
             cmd = [spotdl_path, track['url'], '--output', download_folder]
             if dont_filter:
                 cmd.append('--dont-filter-results')
             
             subprocess.run(cmd, check=True)
-            return True
+            
+            # Verify that a new MP3 file was actually created
+            current_mp3s = set()
+            if os.path.exists(download_folder):
+                for file in os.listdir(download_folder):
+                    if file.endswith('.mp3'):
+                        current_mp3s.add(file)
+            
+            new_mp3s = current_mp3s - existing_mp3s
+            
+            # Return True only if at least one new MP3 was created
+            return len(new_mp3s) > 0
+            
         except Exception as e:
             print(f"Failed to download {track['name']}: {e}")
             return False

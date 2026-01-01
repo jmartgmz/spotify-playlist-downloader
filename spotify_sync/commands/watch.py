@@ -98,7 +98,8 @@ def process_playlist_watch(
         orphaned_stats = CleanupManager.cleanup_orphaned_files(
             csv_filepath,
             playlist_download_folder,
-            auto_delete=True
+            auto_delete=True,
+            current_tracks=tracks
         )
         
         # Update CSV (do this AFTER cleanup so removed songs can be detected)

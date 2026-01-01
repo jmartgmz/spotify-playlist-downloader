@@ -181,7 +181,8 @@ def process_playlist(
         orphaned_stats = CleanupManager.cleanup_orphaned_files(
             csv_filepath,
             playlist_download_folder,
-            auto_delete=True
+            auto_delete=True,
+            current_tracks=tracks
         )
         
         # Update CSV AFTER cleanup
