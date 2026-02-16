@@ -1,21 +1,18 @@
 # Spotify Playlist Sync
 
-🎵 **Automatically download songs from your Spotify playlists in high-quality FLAC format**
+Automatically download songs from your Spotify playlists in high-quality FLAC format.
 
-Sync your Spotify playlists with local downloads. Features intelligent downloading, automatic cleanup of removed songs, and continuous monitoring.
+## Prerequisites
 
-## ✨ Quick Start
+- Python 3.8+
+- Spotify Developer Account - [Setup Guide](docs/GETTING_SPOTIFY_API.md)
 
-### Prerequisites
-- **Python 3.8+**
-- **Spotify Developer Account** (free) - [Setup Guide](docs/GETTING_SPOTIFY_API.md)
+## Installation
 
-### Installation
+### Windows
+Double-click `run.bat` to automatically set up and launch.
 
-#### Windows
-**Double-click `run.bat`** - Automatically sets up virtual environment and launches!
-
-#### Linux/Mac
+### Linux/Mac
 ```bash
 git clone https://github.com/jmartgmz/spotify-playlist-downloader.git
 cd spotify-playlist-downloader
@@ -27,7 +24,15 @@ cp docs/.env.example .env
 python launcher.py
 ```
 
-## 🎵 Commands
+## Usage
+
+Run the launcher and use commands interactively:
+
+```bash
+python launcher.py
+```
+
+### Available Commands
 
 | Command | Description |
 |---------|-------------|
@@ -35,52 +40,17 @@ python launcher.py
 | `watch` | Monitor for new songs continuously |
 | `discover` | Auto-discover your Spotify playlists |
 | `refresh` | Update CSV files with current downloads |
+| `help` | Show detailed help |
+| `quit` | Exit launcher |
 
-```bash
-python launcher.py
-# Then type commands interactively
-```
-
-### Options
+### Command Options
 
 - `--download-folder FOLDER` - Custom download location
 - `--manual-verify` - Confirm matches before downloading
-- `--manual-link` - Manually provide links
+- `--manual-link` - Manually provide YouTube links (downloads as MP3)
 - `--dont-filter-results` - Disable result filtering
 
-**Note:** Songs removed from Spotify are automatically deleted locally.
-
-## 📁 Project Structure
-
-```
-spotify-playlist-downloader/
-├── spotify_sync/           # Core application
-│   ├── core/              # Core functionality
-│   ├── commands/          # CLI commands
-│   └── utils/             # Utilities
-├── docs/                  # Documentation
-│   ├── .env.example       # Environment template
-│   ├── GETTING_SPOTIFY_API.md
-│   └── playlists.txt.example
-├── downloaded_songs/      # Your music library
-│   └── [Playlist Name]/
-│       ├── *.flac         # Music files (FLAC format)
-│       └── *.csv          # Download tracking
-├── launcher.py            # Interactive CLI
-├── run.bat                # Windows quick start
-└── playlists.txt          # Your playlists
-```
-
-## ✨ Features
-
-- ✅ **Auto-sync** playlists with local downloads
-- 🔄 **Auto-cleanup** removed songs
-- 🔍 **Auto-discovery** of your Spotify playlists
-- 📊 **CSV tracking** for download management
-- 🎵 **High-quality FLAC** downloads
-- ⚙️ **Manual verification** mode available
-
-## ⚙️ Configuration
+## Configuration
 
 1. Get Spotify API credentials from https://developer.spotify.com/dashboard
 2. Create app with redirect URI: `http://127.0.0.1:8888/callback`
@@ -92,26 +62,46 @@ SPOTIFY_CLIENT_SECRET=your_client_secret
 SPOTIFY_REDIRECT_URI=http://127.0.0.1:8888/callback
 ```
 
-📖 **Detailed guide:** [docs/GETTING_SPOTIFY_API.md](docs/GETTING_SPOTIFY_API.md)
+See [docs/GETTING_SPOTIFY_API.md](docs/GETTING_SPOTIFY_API.md) for detailed instructions.
 
-## 💡 Tips
+## Features
 
-- **Windows**: Double-click `run.bat` for automatic setup
-- **Organization**: Songs organized by playlist name
-- **Watcher**: Press `Ctrl+C` to stop
+- Auto-sync playlists with local downloads
+- Auto-cleanup of removed songs
+- Auto-discovery of your Spotify playlists
+- CSV tracking for download management
+- High-quality FLAC downloads
+- Manual verification mode
 
-## 🔧 Troubleshooting
+## Project Structure
+
+```
+spotify-playlist-downloader/
+├── spotify_sync/           # Core application
+│   ├── core/              # Core functionality
+│   ├── commands/          # CLI commands
+│   └── utils/             # Utilities
+├── docs/                  # Documentation
+├── downloaded_songs/      # Your music library
+├── launcher.py            # Interactive CLI
+└── playlists.txt          # Your playlists
+```
+
+## Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
 | "Invalid client_id" | Check Spotify credentials in `.env` |
-| "Track not found" | Song not available on Spotify (will skip) |
+| "Track not found" | Song not available on any service |
 | Permission errors | Ensure write permissions for download folder |
 
-## 📄 License
+## Notes
+
+- Songs removed from Spotify playlists are automatically deleted locally
+- **Default mode**: Downloads FLAC from Tidal, Qobuz, Deezer, or Amazon Music
+- **Manual link mode** (`--manual-link`): Downloads MP3 from YouTube with Spotify metadata
+- Manual link is useful when a track isn't available on streaming services
+
+## License
 
 Personal use only. Support artists through official channels.
-
----
-
-🎵 **Enjoy your music!**
