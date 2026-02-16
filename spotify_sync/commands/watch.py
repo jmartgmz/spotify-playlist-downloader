@@ -18,7 +18,7 @@ import argparse
 from datetime import datetime, timedelta
 from spotify_sync.core.spotify_api import SpotifyClient
 from spotify_sync.core.file_manager import FileManager
-from spotify_sync.core.downloader import SpotdlDownloader
+from spotify_sync.core.downloader import SpotiFLACDownloader
 from spotify_sync.core.csv_manager import CSVManager
 from spotify_sync.core.cleanup_manager import CleanupManager
 from spotify_sync.utils.utils import PlaylistReader
@@ -74,7 +74,7 @@ def process_playlist_watch(
                 artist_str = ', '.join(track['artists']) if track['artists'] else 'Unknown'
                 Logger.info(f"Downloading: {track['name']} - {artist_str}")
                 
-                if not SpotdlDownloader.download_from_spotify(track, playlist_download_folder):
+                if not SpotiFLACDownloader.download_from_spotify(track, playlist_download_folder):
                     track['unable_to_find'] = True
                     Logger.warning(f"Could not find: {track['name']}")
         else:

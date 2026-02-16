@@ -2,7 +2,7 @@
 """
 One-time checker for Spotify playlists.
 Fetches all songs from specified playlists, checks which are downloaded,
-and downloads any missing songs using spotdl.
+and downloads any missing songs using SpotiFLAC.
 
 Usage:
     python check.py --download-folder "/path/to/folder"
@@ -19,7 +19,7 @@ import argparse
 import sys
 from spotify_sync.core.spotify_api import SpotifyClient
 from spotify_sync.core.file_manager import FileManager
-from spotify_sync.core.downloader import SpotdlDownloader
+from spotify_sync.core.downloader import SpotiFLACDownloader
 from spotify_sync.core.csv_manager import CSVManager
 from spotify_sync.core.cleanup_manager import CleanupManager
 from spotify_sync.utils.utils import PlaylistReader, UserInput
@@ -46,7 +46,7 @@ def process_playlist(
         download_folder: Base folder for downloads
         manual_verify: Show YouTube URL and ask for confirmation
         manual_link: Manually provide YouTube links
-        dont_filter: Disable spotdl result filtering
+        dont_filter: Disable result filtering
         
     Returns:
         Dictionary with stats (total_tracks, missing, downloaded, skipped, failed)
@@ -125,7 +125,7 @@ def process_playlist(
                     Logger.warning(f"Skipped: {track['name']}")
                     track['manually_skipped'] = True
                     stats['skipped'] += 1
-                elif SpotdlDownloader.download_from_youtube(youtube_url, playlist_download_folder, track):
+                elif SpotiFLACDownloader.download_from_youtube(youtube_url, playlist_download_folder, track):
                     Logger.success(f"Downloaded: {track['name']}")
                     success = True
                     stats['downloaded'] += 1
@@ -136,12 +136,12 @@ def process_playlist(
             
             elif manual_verify:
                 # Manual verification mode
-                yt_url = SpotdlDownloader.get_youtube_url(track, dont_filter=dont_filter)
+                yt_url = SpotiFLACDownloader.get_youtube_url(track, dont_filter=dont_filter)
                 if yt_url:
                     Logger.info(f"YouTube match: {yt_url}")
                 
                 if UserInput.confirm_download(track['name']):
-                    if SpotdlDownloader.download_from_spotify(track, playlist_download_folder, dont_filter=dont_filter):
+                    if SpotiFLACDownloader.download_from_spotify(track, playlist_download_folder, dont_filter=dont_filter):
                         Logger.success(f"Downloaded: {track['name']}")
                         success = True
                         stats['downloaded'] += 1
@@ -156,7 +156,7 @@ def process_playlist(
             
             else:
                 # Automatic mode
-                success, error_msg = SpotdlDownloader.download_from_spotify(track, playlist_download_folder, dont_filter=dont_filter)
+                success, error_msg = SpotiFLACDownloader.download_from_spotify(track, playlist_download_folder, dont_filter=dont_filter)
                 if success:
                     Logger.success(f"Downloaded: {track['name']}")
                     stats['downloaded'] += 1
@@ -226,7 +226,7 @@ def main():
     parser = argparse.ArgumentParser(description="Check and download songs from Spotify playlists")
     parser.add_argument("--download-folder", default=Config.get_downloads_folder(), help="Folder to download songs to")
     parser.add_argument("--manual-verify", action="store_true", help="Manually verify each YouTube link before downloading")
-    parser.add_argument("--dont-filter-results", action="store_true", help="Don't filter spotdl search results")
+    parser.add_argument("--dont-filter-results", action="store_true", help="Don't filter search results")
     parser.add_argument("--manual-link", action="store_true", help="Manually provide YouTube links for each song")
     
     args = parser.parse_args()
