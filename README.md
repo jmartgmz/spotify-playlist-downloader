@@ -1,40 +1,16 @@
 # Spotify Playlist Sync
 
-🎵 **Automatically download songs from your Spotify playlists using YouTube as the source**
+🎵 **Automatically download songs from your Spotify playlists in high-quality FLAC format**
 
 Sync your Spotify playlists with local downloads. Features intelligent downloading, automatic cleanup of removed songs, and continuous monitoring.
 
 ## ✨ Quick Start
 
 ### Prerequisites
-- **Docker** (recommended) OR **Python 3.8+**
+- **Python 3.8+**
 - **Spotify Developer Account** (free) - [Setup Guide](docs/GETTING_SPOTIFY_API.md)
 
-### 🐳 Docker (Recommended)
-
-1. **Clone and configure**
-   ```bash
-   git clone https://github.com/jmartgmz/spotify-playlist-downloader.git
-   cd spotify-playlist-downloader
-   cp docs/.env.example .env
-   # Edit .env with your Spotify credentials
-   ```
-
-2. **Add your playlists**
-   ```bash
-   # Edit playlists.txt with Spotify playlist URLs (one per line)
-   ```
-
-3. **Run**
-   ```bash
-   docker-compose up -d
-   docker attach spotify-playlist-sync
-   # Now use commands: sync, watch, discover, refresh
-   ```
-
-📖 **[Full Docker Guide →](docs/DOCKER.md)**
-
-### 🐍 Python
+### Installation
 
 #### Windows
 **Double-click `run.bat`** - Automatically sets up virtual environment and launches!
@@ -68,8 +44,8 @@ python launcher.py
 ### Options
 
 - `--download-folder FOLDER` - Custom download location
-- `--manual-verify` - Confirm YouTube matches before downloading
-- `--manual-link` - Manually provide YouTube links
+- `--manual-verify` - Confirm matches before downloading
+- `--manual-link` - Manually provide links
 - `--dont-filter-results` - Disable result filtering
 
 **Note:** Songs removed from Spotify are automatically deleted locally.
@@ -81,20 +57,17 @@ spotify-playlist-downloader/
 ├── spotify_sync/           # Core application
 │   ├── core/              # Core functionality
 │   ├── commands/          # CLI commands
-│   ├── dashboard/         # Web interface
 │   └── utils/             # Utilities
 ├── docs/                  # Documentation
 │   ├── .env.example       # Environment template
-│   ├── DOCKER.md
 │   ├── GETTING_SPOTIFY_API.md
 │   └── playlists.txt.example
 ├── downloaded_songs/      # Your music library
 │   └── [Playlist Name]/
-│       ├── *.mp3          # Music files
+│       ├── *.flac         # Music files (FLAC format)
 │       └── *.csv          # Download tracking
 ├── launcher.py            # Interactive CLI
 ├── run.bat                # Windows quick start
-├── docker-compose.yml     # Docker setup
 └── playlists.txt          # Your playlists
 ```
 
@@ -104,7 +77,7 @@ spotify-playlist-downloader/
 - 🔄 **Auto-cleanup** removed songs
 - 🔍 **Auto-discovery** of your Spotify playlists
 - 📊 **CSV tracking** for download management
-- 🐳 **Docker support** for easy deployment
+- 🎵 **High-quality FLAC** downloads
 - ⚙️ **Manual verification** mode available
 
 ## ⚙️ Configuration
@@ -126,14 +99,13 @@ SPOTIFY_REDIRECT_URI=http://127.0.0.1:8888/callback
 - **Windows**: Double-click `run.bat` for automatic setup
 - **Organization**: Songs organized by playlist name
 - **Watcher**: Press `Ctrl+C` to stop
-- **Docker**: See [docs/DOCKER.md](docs/DOCKER.md) for containerized deployment
 
 ## 🔧 Troubleshooting
 
 | Issue | Solution |
 |-------|----------|
 | "Invalid client_id" | Check Spotify credentials in `.env` |
-| "Can't find YouTube video" | Song not available on YouTube (will skip) |
+| "Track not found" | Song not available on Spotify (will skip) |
 | Permission errors | Ensure write permissions for download folder |
 
 ## 📄 License
