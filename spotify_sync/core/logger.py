@@ -68,9 +68,12 @@ class Logger:
     @staticmethod
     def header(message: str) -> None:
         """Log a section header."""
-        timestamp = Logger._get_timestamp()
         print(f"\n{'='*70}")
+        # Temporarily disable timestamps for header
+        orig_timestamps = Logger.ENABLE_TIMESTAMPS
+        Logger.ENABLE_TIMESTAMPS = False
         print(Logger._format_message(MessageType.INFO, f"{message}", "🎵 "))
+        Logger.ENABLE_TIMESTAMPS = orig_timestamps
         print(f"{'='*70}\n")
 
     @staticmethod
@@ -118,7 +121,11 @@ class Logger:
     def summary(label: str, value: str, success: bool = True) -> None:
         """Log a summary line."""
         msg_type = MessageType.SUCCESS if success else MessageType.WARNING
+        # Temporarily disable timestamps for summary
+        orig_timestamps = Logger.ENABLE_TIMESTAMPS
+        Logger.ENABLE_TIMESTAMPS = False
         print(Logger._format_message(msg_type, f"{label}: {value}", "📈 " if success else "📉 "))
+        Logger.ENABLE_TIMESTAMPS = orig_timestamps
 
     @staticmethod
     def step(step_num: int, total_steps: int, description: str) -> None:

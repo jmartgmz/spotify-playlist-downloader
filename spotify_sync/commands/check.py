@@ -156,14 +156,19 @@ def process_playlist(
             
             else:
                 # Automatic mode
-                if SpotdlDownloader.download_from_spotify(track, playlist_download_folder, dont_filter=dont_filter):
+                success, error_msg = SpotdlDownloader.download_from_spotify(track, playlist_download_folder, dont_filter=dont_filter)
+                if success:
                     Logger.success(f"Downloaded: {track['name']}")
-                    success = True
                     stats['downloaded'] += 1
                 else:
-                    Logger.error(f"Failed to download: {track['name']}")
+                    error_suffix = f" ({error_msg})" if error_msg else ""
+                    Logger.error(f"Failed to download: {track['name']}{error_suffix}")
                     track['unable_to_find'] = True
                     stats['failed'] += 1
+            
+            # Add spacing between downloads for readability
+            if idx < len(missing_tracks):
+                print()
         
         # Refresh downloads
         downloaded = FileManager.get_downloaded_songs(playlist_download_folder)
