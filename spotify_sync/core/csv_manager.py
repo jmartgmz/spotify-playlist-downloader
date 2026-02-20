@@ -199,6 +199,13 @@ class CSVManager:
                 # Add default blank format if key missing
                 if 'Format' not in row:
                     row['Format'] = ''
+                    
+                # If it used to be downloaded but isn't anymore (file was deleted)
+                if current_status == 'downloaded':
+                    row['Status'] = 'missing'
+                    row['Format'] = ''
+                    updated_count += 1
+                    print(f"  Downgraded to missing (file deleted): {artist} - {song_title}")
         
         # Write back to CSV (alphabetized A-Z)
         try:
