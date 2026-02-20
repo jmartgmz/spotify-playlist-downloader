@@ -39,6 +39,7 @@ def print_banner():
     print(f"\n{Colors.BOLD}Available Commands:{Colors.RESET}")
     print(f"  {Colors.GREEN}sync{Colors.RESET} {Colors.DIM}(s){Colors.RESET}      → Download missing songs from playlists")
     print(f"  {Colors.BLUE}watch{Colors.RESET} {Colors.DIM}(w){Colors.RESET}     → Monitor playlists continuously")
+    print(f"  {Colors.GREEN}manual{Colors.RESET} {Colors.DIM}(m){Colors.RESET}    → Manually provide YouTube links for missing songs")
     print(f"  {Colors.PURPLE}discover{Colors.RESET} {Colors.DIM}(d){Colors.RESET}  → Auto-discover your Spotify playlists")
     print(f"  {Colors.CYAN}refresh{Colors.RESET} {Colors.DIM}(r){Colors.RESET}   → Update CSV files with current downloads")
     print(f"  {Colors.MAGENTA}sanitize{Colors.RESET} {Colors.DIM}(z){Colors.RESET}  → Clean up extra spaces in downloaded filenames")
@@ -48,16 +49,9 @@ def print_banner():
     
     print(f"\n{Colors.BOLD}Common Options:{Colors.RESET}")
     print(f"  {Colors.DIM}--download-folder PATH{Colors.RESET}    Custom download location")
-    print(f"  {Colors.DIM}--manual-verify{Colors.RESET}           Verify YouTube matches")
     print(f"  {Colors.DIM}--interval N{Colors.RESET}              Check interval (minutes, for watch)")
     
-    print(f"\n{Colors.BOLD}Note:{Colors.RESET}")
-    print(f"  {Colors.GREEN}Cleanup is automatic!{Colors.RESET} Removed songs are always deleted to stay in sync.")
-    
-    print(f"\n{Colors.BOLD}Examples:{Colors.RESET}")
-    print(f"  {Colors.DIM}sync{Colors.RESET}")
-    print(f"  {Colors.DIM}watch --interval 5{Colors.RESET}")
-    print(f"  {Colors.DIM}discover{Colors.RESET}")
+
     print(f"{Colors.CYAN}{'═' * 70}{Colors.RESET}\n")
 
 
@@ -70,6 +64,7 @@ def print_help():
     print(f"\n{Colors.BOLD}Commands:{Colors.RESET}")
     print(f"  {Colors.GREEN}sync{Colors.RESET}, {Colors.DIM}s{Colors.RESET}       Download missing songs from playlists")
     print(f"  {Colors.BLUE}watch{Colors.RESET}, {Colors.DIM}w{Colors.RESET}      Monitor playlists continuously for new songs")
+    print(f"  {Colors.GREEN}manual{Colors.RESET}, {Colors.DIM}m{Colors.RESET}     Manually provide YouTube links for missing songs")
     print(f"  {Colors.PURPLE}discover{Colors.RESET}, {Colors.DIM}d{Colors.RESET}   Auto-discover your Spotify playlists")
     print(f"  {Colors.CYAN}refresh{Colors.RESET}, {Colors.DIM}r{Colors.RESET}    Update CSV files with current downloads")
     print(f"  {Colors.MAGENTA}sanitize{Colors.RESET}, {Colors.DIM}z{Colors.RESET}   Clean up extra spaces in downloaded filenames")
@@ -79,22 +74,11 @@ def print_help():
     
     print(f"\n{Colors.BOLD}Sync Options:{Colors.RESET}")
     print(f"  {Colors.DIM}--download-folder PATH{Colors.RESET}    Save downloads to custom location")
-    print(f"  {Colors.DIM}--manual-verify{Colors.RESET}           Show YouTube match and confirm before downloading")
-    print(f"  {Colors.DIM}--manual-link{Colors.RESET}             Manually provide YouTube links for each song")
-    print(f"  {Colors.DIM}--dont-filter-results{Colors.RESET}     Disable result filtering")
     
     print(f"\n{Colors.BOLD}Watch Options:{Colors.RESET}")
     print(f"  {Colors.DIM}--interval N{Colors.RESET}              Check interval in minutes (default: 10)")
     
-    print(f"\n{Colors.BOLD}Note:{Colors.RESET}")
-    print(f"  {Colors.GREEN}✓ Automatic cleanup enabled{Colors.RESET} - Downloads stay in perfect sync with Spotify")
-    print(f"  {Colors.DIM}Songs removed from playlists are automatically deleted locally{Colors.RESET}")
-    
-    print(f"\n{Colors.BOLD}Examples:{Colors.RESET}")
-    print(f"  {Colors.GREEN}sync{Colors.RESET}")
-    print(f"  {Colors.GREEN}sync{Colors.RESET} {Colors.DIM}--download-folder C:\\Music{Colors.RESET}")
-    print(f"  {Colors.BLUE}watch{Colors.RESET} {Colors.DIM}--interval 5{Colors.RESET}")
-    print(f"  {Colors.PURPLE}discover{Colors.RESET}")
+
     print(f"{Colors.CYAN}{'═' * 70}{Colors.RESET}\n")
 
 
@@ -121,6 +105,8 @@ def execute_command(command_line):
         command_map = {
             'sync': 'check',
             's': 'check',
+            'manual': 'check',
+            'm': 'check',
             'watch': 'watch',
             'w': 'watch',
             'discover': 'update_playlists_txt',
@@ -162,6 +148,8 @@ def execute_command(command_line):
         
         # Replace sys.argv for the command
         sys.argv = ['launcher.py'] + args
+        if command in ['manual', 'm']:
+            sys.argv.append('--manual-link')
         
         # Run the command
         cmd_main()

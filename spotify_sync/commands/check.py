@@ -32,9 +32,7 @@ def process_playlist(
     spotify_client: SpotifyClient,
     playlist_id: str,
     download_folder: str,
-    manual_verify: bool = False,
-    manual_link: bool = False,
-    dont_filter: bool = False
+    manual_link: bool = False
 ) -> dict:
     """
     Process a single playlist: fetch tracks, check downloads, download missing songs.
@@ -44,9 +42,7 @@ def process_playlist(
         spotify_client: SpotifyClient instance
         playlist_id: Spotify playlist ID or URL
         download_folder: Base folder for downloads
-        manual_verify: Show YouTube URL and ask for confirmation
         manual_link: Manually provide YouTube links
-        dont_filter: Disable result filtering
         
     Returns:
         Dictionary with stats (total_tracks, missing, downloaded, skipped, failed)
@@ -134,29 +130,9 @@ def process_playlist(
                     track['unable_to_find'] = True
                     stats['failed'] += 1
             
-            elif manual_verify:
-                # Manual verification mode
-                yt_url = SpotiFLACDownloader.get_youtube_url(track, dont_filter=dont_filter)
-                if yt_url:
-                    Logger.info(f"YouTube match: {yt_url}")
-                
-                if UserInput.confirm_download(track['name']):
-                    if SpotiFLACDownloader.download_from_spotify(track, playlist_download_folder, dont_filter=dont_filter):
-                        Logger.success(f"Downloaded: {track['name']}")
-                        success = True
-                        stats['downloaded'] += 1
-                    else:
-                        Logger.error(f"Failed to download: {track['name']}")
-                        track['unable_to_find'] = True
-                        stats['failed'] += 1
-                else:
-                    Logger.warning(f"Skipped: {track['name']}")
-                    track['manually_skipped'] = True
-                    stats['skipped'] += 1
-            
             else:
                 # Automatic mode
-                success, error_msg = SpotiFLACDownloader.download_from_spotify(track, playlist_download_folder, dont_filter=dont_filter)
+                success, error_msg = SpotiFLACDownloader.download_from_spotify(track, playlist_download_folder)
                 if success:
                     Logger.success(f"Downloaded: {track['name']}")
                     stats['downloaded'] += 1
@@ -225,8 +201,6 @@ def main():
     """
     parser = argparse.ArgumentParser(description="Check and download songs from Spotify playlists")
     parser.add_argument("--download-folder", default=Config.get_downloads_folder(), help="Folder to download songs to")
-    parser.add_argument("--manual-verify", action="store_true", help="Manually verify each YouTube link before downloading")
-    parser.add_argument("--dont-filter-results", action="store_true", help="Don't filter search results")
     parser.add_argument("--manual-link", action="store_true", help="Manually provide YouTube links for each song")
     
     args = parser.parse_args()
@@ -291,9 +265,7 @@ def main():
                 spotify_client,
                 playlist_id,
                 args.download_folder,
-                manual_verify=args.manual_verify,
-                manual_link=args.manual_link,
-                dont_filter=args.dont_filter_results
+                manual_link=args.manual_link
             )
             
             # Accumulate stats
