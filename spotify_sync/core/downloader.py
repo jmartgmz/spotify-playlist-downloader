@@ -270,6 +270,19 @@ class SpotiFLACDownloader:
             
             new_flacs = current_flacs - existing_flacs
             
+            # Clean up spacing in newly downloaded FLAC files
+            for flac_file in new_flacs:
+                old_path = os.path.join(download_folder, flac_file)
+                new_name = FilenameSanitizer.clean_extra_spaces(flac_file)
+                if new_name != flac_file:
+                    new_path = os.path.join(download_folder, new_name)
+                    try:
+                        if os.path.exists(new_path):
+                            os.remove(new_path)
+                        os.rename(old_path, new_path)
+                    except Exception as e:
+                        print(f"⚠ Could not sanitize filename spacing: {str(e)}")
+            
             # If download failed, return error
             if len(new_flacs) == 0:
                 return False, "No FLAC file was created"

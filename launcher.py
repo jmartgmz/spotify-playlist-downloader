@@ -41,6 +41,7 @@ def print_banner():
     print(f"  {Colors.BLUE}watch{Colors.RESET} {Colors.DIM}(w){Colors.RESET}     → Monitor playlists continuously")
     print(f"  {Colors.PURPLE}discover{Colors.RESET} {Colors.DIM}(d){Colors.RESET}  → Auto-discover your Spotify playlists")
     print(f"  {Colors.CYAN}refresh{Colors.RESET} {Colors.DIM}(r){Colors.RESET}   → Update CSV files with current downloads")
+    print(f"  {Colors.MAGENTA}sanitize{Colors.RESET} {Colors.DIM}(z){Colors.RESET}  → Clean up extra spaces in downloaded filenames")
     print(f"  {Colors.YELLOW}help{Colors.RESET} {Colors.DIM}(h){Colors.RESET}      → Show detailed help")
     print(f"  {Colors.RED}quit{Colors.RESET} {Colors.DIM}(q){Colors.RESET}      → Exit launcher")
     
@@ -70,6 +71,7 @@ def print_help():
     print(f"  {Colors.BLUE}watch{Colors.RESET}, {Colors.DIM}w{Colors.RESET}      Monitor playlists continuously for new songs")
     print(f"  {Colors.PURPLE}discover{Colors.RESET}, {Colors.DIM}d{Colors.RESET}   Auto-discover your Spotify playlists")
     print(f"  {Colors.CYAN}refresh{Colors.RESET}, {Colors.DIM}r{Colors.RESET}    Update CSV files with current downloads")
+    print(f"  {Colors.MAGENTA}sanitize{Colors.RESET}, {Colors.DIM}z{Colors.RESET}   Clean up extra spaces in downloaded filenames")
     print(f"  {Colors.YELLOW}help{Colors.RESET}, {Colors.DIM}h{Colors.RESET}       Show this help message")
     print(f"  {Colors.RED}quit{Colors.RESET}, {Colors.DIM}q, exit{Colors.RESET} Exit the launcher")
     
@@ -123,6 +125,8 @@ def execute_command(command_line):
             'd': 'update_playlists_txt',
             'refresh': 'update_csv',
             'r': 'update_csv',
+            'sanitize': 'sanitize',
+            'z': 'sanitize',
         }
         
         if command not in command_map:
@@ -147,6 +151,8 @@ def execute_command(command_line):
             from spotify_sync.commands.update_playlists_txt import main as cmd_main
         elif module_name == 'update_csv':
             from spotify_sync.commands.update_csv import main as cmd_main
+        elif module_name == 'sanitize':
+            from spotify_sync.commands.sanitize import main as cmd_main
         
         # Replace sys.argv for the command
         sys.argv = ['launcher.py'] + args
