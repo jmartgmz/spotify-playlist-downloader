@@ -103,13 +103,10 @@ def process_playlist(
             Logger.success("All songs already downloaded!")
             return stats
         
-        Logger.start_progress("downloading songs")
-        
         # Download missing songs
         for idx, track in enumerate(missing_tracks, 1):
-            Logger.progress(idx, len(missing_tracks), f"downloading", show_eta=True)
             artist_str = ', '.join(track['artists']) if track['artists'] else 'Unknown'
-            Logger.info(f"Downloading: {track['name']} - {artist_str}")
+            Logger.info(f"[{idx}/{len(missing_tracks)}] Downloading: {track['name']} - {artist_str}")
             
             success = False
             
@@ -142,9 +139,7 @@ def process_playlist(
                     track['unable_to_find'] = True
                     stats['failed'] += 1
             
-            # Add spacing between downloads for readability
-            if idx < len(missing_tracks):
-                print()
+            # Spacing handled by the consolidated header instead
         
         # Refresh downloads
         downloaded = FileManager.get_downloaded_songs(playlist_download_folder)

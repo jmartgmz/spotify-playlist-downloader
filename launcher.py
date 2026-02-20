@@ -34,7 +34,14 @@ class Colors:
 def print_banner():
     """Print welcome banner."""
     print(f"\n{Colors.CYAN}{'═' * 70}{Colors.RESET}")
-    print(f"{Colors.BOLD}{Colors.GREEN}  🎵  Spotify Playlist Sync  🎵{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.GREEN}")
+    print(r"  ____              _   _  ____                             ")
+    print(r" / ___| _ __   ___ | |_(_) ___| _   _ _ __   ___ ___ _ __   ")
+    print(r" \___ \| '_ \ / _ \| __| \___ \| | | | '_ \ / __/ _ \ '__|  ")
+    print(r"  ___) | |_) | (_) | |_| |___) | |_| | | | | (_|  __/ |     ")
+    print(r" |____/| .__/ \___/ \__|_|____/ \__, |_| |_|\___\___|_|     ")
+    print(r"       |_|                      |___/                       ")
+    print(f"{Colors.RESET}")
     print(f"{Colors.CYAN}{'═' * 70}{Colors.RESET}")
     print(f"\n{Colors.BOLD}Available Commands:{Colors.RESET}")
     print(f"  {Colors.GREEN}sync{Colors.RESET} {Colors.DIM}(s){Colors.RESET}      → Download missing songs from playlists")
@@ -58,7 +65,14 @@ def print_banner():
 def print_help():
     """Print help message."""
     print(f"\n{Colors.CYAN}{'═' * 70}{Colors.RESET}")
-    print(f"{Colors.BOLD}{Colors.BLUE}  📚  Command Reference  📚{Colors.RESET}")
+    print(f"{Colors.BOLD}{Colors.BLUE}")
+    print(r"  ____              _   _  ____                             ")
+    print(r" / ___| _ __   ___ | |_(_) ___| _   _ _ __   ___ ___ _ __   ")
+    print(r" \___ \| '_ \ / _ \| __| \___ \| | | | '_ \ / __/ _ \ '__|  ")
+    print(r"  ___) | |_) | (_) | |_| |___) | |_| | | | | (_|  __/ |     ")
+    print(r" |____/| .__/ \___/ \__|_|____/ \__, |_| |_|\___\___|_|     ")
+    print(r"       |_|                      |___/                       ")
+    print(f"{Colors.RESET}")
     print(f"{Colors.CYAN}{'═' * 70}{Colors.RESET}")
     
     print(f"\n{Colors.BOLD}Commands:{Colors.RESET}")

@@ -96,7 +96,7 @@ class SettingsManager:
             },
             "ui": {
                 "enable_colors": True,
-                "enable_timestamps": True,
+                "enable_timestamps": False,
                 "enable_progress_bars": True,
                 "enable_debug_mode": False
             },
