@@ -33,21 +33,23 @@ class Colors:
 
 def print_banner():
     """Print welcome banner."""
-    print(f"\n{Colors.CYAN}{'═' * 70}{Colors.RESET}")
-    print(f"{Colors.BOLD}{Colors.GREEN}  🎵  Spotify Playlist Sync  🎵{Colors.RESET}")
-    print(f"{Colors.CYAN}{'═' * 70}{Colors.RESET}")
-    print(f"\n{Colors.BOLD}Available Commands:{Colors.RESET}")
-    print(f"  {Colors.GREEN}sync{Colors.RESET} {Colors.DIM}(s){Colors.RESET}      → Download missing songs from playlists")
-    print(f"  {Colors.BLUE}watch{Colors.RESET} {Colors.DIM}(w){Colors.RESET}     → Monitor playlists continuously")
-    print(f"  {Colors.PURPLE}discover{Colors.RESET} {Colors.DIM}(d){Colors.RESET}  → Auto-discover your Spotify playlists")
-    print(f"  {Colors.CYAN}refresh{Colors.RESET} {Colors.DIM}(r){Colors.RESET}   → Update CSV files with current downloads")
-    print(f"  {Colors.MAGENTA}sanitize{Colors.RESET} {Colors.DIM}(z){Colors.RESET}  → Clean up extra spaces in downloaded filenames")
-    print(f"  {Colors.ORANGE}flac{Colors.RESET}     {Colors.DIM}(f){Colors.RESET}  → Upgrade existing MP3s to FLAC")
-    print(f"  {Colors.DIM}manual{Colors.RESET}   {Colors.DIM}(m){Colors.RESET}  → Manually provide YouTube links for missing songs")
-    print(f"  {Colors.YELLOW}help{Colors.RESET} {Colors.DIM}(h){Colors.RESET}      → Show detailed help")
-    print(f"  {Colors.RED}quit{Colors.RESET} {Colors.DIM}(q){Colors.RESET}      → Exit launcher")
+    print(f"\n{Colors.CYAN}╭{'─' * 68}╮{Colors.RESET}")
+    print(f"{Colors.CYAN}│{Colors.RESET}{Colors.BOLD}{Colors.GREEN}                      🎵 SPOTIFY PLAYLIST SYNC 🎵                     {Colors.RESET}{Colors.CYAN}│{Colors.RESET}")
+    print(f"{Colors.CYAN}╰{'─' * 68}╯{Colors.RESET}")
     
-    print(f"{Colors.CYAN}{'═' * 70}{Colors.RESET}\n")
+    print(f"\n{Colors.BOLD}{Colors.UNDERLINE}AVAILABLE COMMANDS{Colors.RESET}\n")
+    
+    print(f"  {Colors.GREEN}▶ sync{Colors.RESET}     {Colors.DIM}(s){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Download missing songs from playlists")
+    print(f"  {Colors.BLUE}▶ watch{Colors.RESET}    {Colors.DIM}(w){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Monitor playlists continuously")
+    print(f"  {Colors.PURPLE}▶ discover{Colors.RESET} {Colors.DIM}(d){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Auto-discover your Spotify playlists")
+    print(f"  {Colors.CYAN}▶ refresh{Colors.RESET}  {Colors.DIM}(r){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Update CSV files with current downloads")
+    print(f"  {Colors.MAGENTA}▶ sanitize{Colors.RESET} {Colors.DIM}(z){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Clean up extra spaces in downloaded filenames")
+    print(f"  {Colors.ORANGE}▶ flac{Colors.RESET}     {Colors.DIM}(f){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Upgrade existing MP3s to FLAC")
+    print(f"  {Colors.DIM}▶ manual{Colors.RESET}   {Colors.DIM}(m){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Manually provide YouTube links for missing songs")
+    print(f"  {Colors.YELLOW}▶ help{Colors.RESET}     {Colors.DIM}(h){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Show detailed help")
+    print(f"  {Colors.RED}▶ quit{Colors.RESET}     {Colors.DIM}(q){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Exit launcher")
+    
+    print(f"\n{Colors.CYAN}{'━' * 70}{Colors.RESET}\n")
 
 
 def print_help():
