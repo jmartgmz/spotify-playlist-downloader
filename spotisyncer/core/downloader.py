@@ -20,7 +20,7 @@ from mutagen.mp3 import MP3
 from mutagen.easyid3 import EasyID3
 from mutagen.id3 import ID3
 from mutagen.id3._frames import APIC
-from spotify_sync.utils.utils import FilenameSanitizer
+from spotisyncer.utils.utils import FilenameSanitizer
 import contextlib
 import io
 

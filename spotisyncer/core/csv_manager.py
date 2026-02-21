@@ -101,7 +101,7 @@ class CSVManager:
         # Alphabetize tracks from A-Z before writing
         sorted_tracks = sorted(tracks, key=lambda t: f"{t['artists'][0] if t['artists'] else 'Unknown'} - {t['name']}".lower())
         
-        from spotify_sync.core.file_manager import FileManager
+        from spotisyncer.core.file_manager import FileManager
         
         with open(filepath, "w", encoding="utf-8", newline='') as f:
             writer = csv.writer(f)
@@ -173,7 +173,7 @@ class CSVManager:
                 mock_track = {'name': song_title, 'artists': [artist]}
                 
                 # Check if we can get the format (needs find_downloaded_song instead of bool equivalent)
-                from spotify_sync.core.file_manager import FileManager
+                from spotisyncer.core.file_manager import FileManager
                 if hasattr(FileManager, 'find_downloaded_song'):
                     file_info = FileManager.find_downloaded_song(mock_track, downloaded_set)
                     if file_info:

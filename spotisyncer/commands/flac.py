@@ -12,14 +12,14 @@ warnings.filterwarnings('ignore')
 import os
 import argparse
 import sys
-from spotify_sync.core.spotify_api import SpotifyClient
-from spotify_sync.core.file_manager import FileManager
-from spotify_sync.core.downloader import SpotiFLACDownloader
-from spotify_sync.core.csv_manager import CSVManager
-from spotify_sync.utils.utils import PlaylistReader
-from spotify_sync.core.logger import Logger
-from spotify_sync.utils.error_handler import ErrorHandler
-from spotify_sync.core.settings_manager import settings, Config
+from spotisyncer.core.spotify_api import SpotifyClient
+from spotisyncer.core.file_manager import FileManager
+from spotisyncer.core.downloader import SpotiFLACDownloader
+from spotisyncer.core.csv_manager import CSVManager
+from spotisyncer.utils.utils import PlaylistReader
+from spotisyncer.core.logger import Logger
+from spotisyncer.utils.error_handler import ErrorHandler
+from spotisyncer.core.settings_manager import settings, Config
 
 def process_playlist(
     spotify_client: SpotifyClient,

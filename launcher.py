@@ -119,14 +119,14 @@ def execute_command(command_line):
         
         # Map command aliases
         command_map = {
-            'sync': 'check',
-            's': 'check',
+            'sync': 'sync',
+            's': 'sync',
             'watch': 'watch',
             'w': 'watch',
-            'discover': 'update_playlists_txt',
-            'd': 'update_playlists_txt',
-            'refresh': 'update_csv',
-            'r': 'update_csv',
+            'discover': 'discover',
+            'd': 'discover',
+            'refresh': 'refresh',
+            'r': 'refresh',
             'sanitize': 'sanitize',
             'z': 'sanitize',
             'flac': 'flac',
@@ -147,18 +147,18 @@ def execute_command(command_line):
         print(f"{Colors.CYAN}{'─' * 70}{Colors.RESET}")
         
         # Import and run the appropriate command
-        if module_name == 'check':
-            from spotify_sync.commands.check import main as cmd_main
+        if module_name == 'sync':
+            from spotisyncer.commands.sync import main as cmd_main
         elif module_name == 'watch':
-            from spotify_sync.commands.watch import main as cmd_main
-        elif module_name == 'update_playlists_txt':
-            from spotify_sync.commands.update_playlists_txt import main as cmd_main
-        elif module_name == 'update_csv':
-            from spotify_sync.commands.update_csv import main as cmd_main
+            from spotisyncer.commands.watch import main as cmd_main
+        elif module_name == 'discover':
+            from spotisyncer.commands.discover import main as cmd_main
+        elif module_name == 'refresh':
+            from spotisyncer.commands.refresh import main as cmd_main
         elif module_name == 'sanitize':
-            from spotify_sync.commands.sanitize import main as cmd_main
+            from spotisyncer.commands.sanitize import main as cmd_main
         elif module_name == 'flac':
-            from spotify_sync.commands.flac import main as cmd_main
+            from spotisyncer.commands.flac import main as cmd_main
         
         # Replace sys.argv for the command
         sys.argv = ['launcher.py'] + args

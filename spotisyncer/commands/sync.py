@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 """
 One-time checker for Spotify playlists.
-Fetches all songs from specified playlists, checks which are downloaded,
-and downloads any missing songs using SpotiFLAC.
+Fetches all songs from specified playlists, check which are downloaded, and download any missing songs via YouTube.
 
-Usage:
-    python check.py --download-folder "/path/to/folder"
-    python check.py --manual-verify --dont-filter-results
-    python check.py --manual-link
+    Examples:
+        python sync.py --download-folder "/path/to/folder"
+        python sync.py --manual-verify --dont-filter-results
+        python sync.py --manual-link
 """
 
 import warnings
@@ -17,15 +16,15 @@ warnings.filterwarnings('ignore')
 import os
 import argparse
 import sys
-from spotify_sync.core.spotify_api import SpotifyClient
-from spotify_sync.core.file_manager import FileManager
-from spotify_sync.core.downloader import SpotiFLACDownloader
-from spotify_sync.core.csv_manager import CSVManager
-from spotify_sync.core.cleanup_manager import CleanupManager
-from spotify_sync.utils.utils import PlaylistReader, UserInput
-from spotify_sync.core.logger import Logger
-from spotify_sync.utils.error_handler import ErrorHandler, ValidationError, SpotifyError
-from spotify_sync.core.settings_manager import settings, Config
+from spotisyncer.core.spotify_api import SpotifyClient
+from spotisyncer.core.file_manager import FileManager
+from spotisyncer.core.downloader import SpotiFLACDownloader
+from spotisyncer.core.csv_manager import CSVManager
+from spotisyncer.core.cleanup_manager import CleanupManager
+from spotisyncer.utils.utils import PlaylistReader, UserInput
+from spotisyncer.core.logger import Logger
+from spotisyncer.utils.error_handler import ErrorHandler, ValidationError, SpotifyError
+from spotisyncer.core.settings_manager import settings, Config
 
 
 def process_playlist(

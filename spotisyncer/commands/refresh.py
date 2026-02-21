@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 """
 Quick CSV updater that checks downloaded songs against the CSV file.
-Much faster than running check.py as it doesn't query Spotify API.
+Much faster than running sync.py as it doesn't query Spotify API.
 
-Usage:
-    python update_csv.py --download-folder "/path/to/folder"
-    python update_csv.py  # Uses default downloaded_songs folder
+Examples:
+    python refresh.py --download-folder "/path/to/folder"
+    python refresh.py  # Uses default downloaded_songs folder
 """
 
 import os
 import os
 import argparse
 import glob
-from spotify_sync.core.spotify_api import SpotifyClient
-from spotify_sync.core.file_manager import FileManager
-from spotify_sync.core.csv_manager import CSVManager
-from spotify_sync.utils.utils import PlaylistReader
-from spotify_sync.core.logger import Logger
-from spotify_sync.utils.error_handler import ErrorHandler
-from spotify_sync.core.settings_manager import settings, Config
+from spotisyncer.core.spotify_api import SpotifyClient
+from spotisyncer.core.file_manager import FileManager
+from spotisyncer.core.csv_manager import CSVManager
+from spotisyncer.utils.utils import PlaylistReader
+from spotisyncer.core.logger import Logger
+from spotisyncer.utils.error_handler import ErrorHandler
+from spotisyncer.core.settings_manager import settings, Config
 
 
 def find_csv_files(download_folder: str) -> list:

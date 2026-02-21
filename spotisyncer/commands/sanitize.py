@@ -14,10 +14,10 @@ warnings.filterwarnings('ignore')
 
 import os
 import argparse
-from spotify_sync.utils.utils import FilenameSanitizer
-from spotify_sync.core.logger import Logger
-from spotify_sync.utils.error_handler import ErrorHandler
-from spotify_sync.core.settings_manager import settings, Config
+from spotisyncer.utils.utils import FilenameSanitizer
+from spotisyncer.core.logger import Logger
+from spotisyncer.utils.error_handler import ErrorHandler
+from spotisyncer.core.settings_manager import settings, Config
 
 def main():
     """Main entry point for directory sanitization."""

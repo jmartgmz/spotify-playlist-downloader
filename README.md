@@ -77,7 +77,7 @@ See [docs/GETTING_SPOTIFY_API.md](docs/GETTING_SPOTIFY_API.md) for detailed inst
 
 ```
 spotify-playlist-downloader/
-├── spotify_sync/           # Core application
+├── spotisyncer/           # Core application
 │   ├── core/              # Core functionality
 │   ├── commands/          # CLI commands
 │   └── utils/             # Utilities

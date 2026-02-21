@@ -6,7 +6,7 @@ Handles downloading songs, managing folders, and file name normalization.
 import os
 import glob
 from typing import Set, Tuple, Optional, Dict
-from spotify_sync.utils.utils import FilenameSanitizer
+from spotisyncer.utils.utils import FilenameSanitizer
 from mutagen import File as MutagenFile
 
 
