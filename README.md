@@ -40,14 +40,14 @@ python launcher.py
 | `watch` | Monitor for new songs continuously |
 | `discover` | Auto-discover your Spotify playlists |
 | `refresh` | Update CSV files with current downloads |
+| `manual` | Manually provide YouTube links for missing songs |
 | `help` | Show detailed help |
 | `quit` | Exit launcher |
 
 ### Command Options
 
 - `--download-folder FOLDER` - Custom download location
-- `--manual-verify` - Confirm matches before downloading
-- `--manual-link` - Manually provide YouTube links (downloads as MP3)
+- `--manual` - Manually provide YouTube links (downloads as MP3)
 - `--dont-filter-results` - Disable result filtering
 
 ## Configuration
@@ -71,7 +71,6 @@ See [docs/GETTING_SPOTIFY_API.md](docs/GETTING_SPOTIFY_API.md) for detailed inst
 - Auto-discovery of your Spotify playlists
 - CSV tracking for download management
 - High-quality FLAC downloads
-- Manual verification mode
 
 ## Project Structure
 
@@ -99,7 +98,7 @@ spotify-playlist-downloader/
 
 - Songs removed from Spotify playlists are automatically deleted locally
 - **Default mode**: Downloads FLAC from Tidal, Qobuz, Deezer, or Amazon Music
-- **Manual link mode** (`--manual-link`): Downloads MP3 from YouTube with Spotify metadata
+- **Manual input mode** (`manual` or `--manual`): Downloads MP3 from YouTube with Spotify metadata
 - Manual link is useful when a track isn't available on streaming services
 
 ## License

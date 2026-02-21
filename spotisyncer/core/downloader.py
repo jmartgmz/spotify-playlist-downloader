@@ -65,7 +65,7 @@ class SpotiFLACDownloader:
     def download_from_youtube(youtube_url: str, download_folder: str, track: Optional[Dict] = None) -> bool:
         """
         Download audio from YouTube URL using yt-dlp and apply Spotify metadata.
-        Downloads as MP3 format for manual link mode.
+        Downloads as MP3 format for manual input mode.
         
         Args:
             youtube_url: YouTube URL to download from

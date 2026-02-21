@@ -5,8 +5,7 @@ Fetches all songs from specified playlists, check which are downloaded, and down
 
     Examples:
         python sync.py --download-folder "/path/to/folder"
-        python sync.py --manual-verify --dont-filter-results
-        python sync.py --manual-link
+        python sync.py --manual
 """
 
 import warnings
@@ -31,8 +30,7 @@ def process_playlist(
     spotify_client: SpotifyClient,
     playlist_id: str,
     download_folder: str,
-    manual_verify: bool = False,
-    manual_link: bool = False,
+    manual: bool = False,
     dont_filter: bool = False
 ) -> dict:
     """
@@ -43,8 +41,7 @@ def process_playlist(
         spotify_client: SpotifyClient instance
         playlist_id: Spotify playlist ID or URL
         download_folder: Base folder for downloads
-        manual_verify: Show YouTube URL and ask for confirmation
-        manual_link: Manually provide YouTube links
+        manual: Manually provide YouTube links
         dont_filter: Disable result filtering
         
     Returns:
@@ -116,7 +113,7 @@ def process_playlist(
             
             success = False
             
-            if manual_link:
+            if manual:
                 # Manual YouTube link mode
                 Logger.info(f"Need YouTube link for: {track['name']} - {artist_str}")
                 youtube_url = UserInput.get_youtube_url()
@@ -132,26 +129,6 @@ def process_playlist(
                     Logger.error(f"Failed to download: {track['name']}")
                     track['unable_to_find'] = True
                     stats['failed'] += 1
-            
-            elif manual_verify:
-                # Manual verification mode
-                yt_url = SpotiFLACDownloader.get_youtube_url(track, dont_filter=dont_filter)
-                if yt_url:
-                    Logger.info(f"YouTube match: {yt_url}")
-                
-                if UserInput.confirm_download(track['name']):
-                    if SpotiFLACDownloader.download_from_spotify(track, playlist_download_folder, dont_filter=dont_filter):
-                        Logger.success(f"Downloaded: {track['name']}")
-                        success = True
-                        stats['downloaded'] += 1
-                    else:
-                        Logger.error(f"Failed to download: {track['name']}")
-                        track['unable_to_find'] = True
-                        stats['failed'] += 1
-                else:
-                    Logger.warning(f"Skipped: {track['name']}")
-                    track['manually_skipped'] = True
-                    stats['skipped'] += 1
             
             else:
                 # Automatic mode
@@ -224,9 +201,8 @@ def main():
     """
     parser = argparse.ArgumentParser(description="Check and download songs from Spotify playlists")
     parser.add_argument("--download-folder", default=Config.get_downloads_folder(), help="Folder to download songs to")
-    parser.add_argument("--manual-verify", action="store_true", help="Manually verify each YouTube link before downloading")
     parser.add_argument("--dont-filter-results", action="store_true", help="Don't filter search results")
-    parser.add_argument("--manual-link", action="store_true", help="Manually provide YouTube links for each song")
+    parser.add_argument("--manual", "-m", action="store_true", help="Manually provide YouTube links for each song")
     
     args = parser.parse_args()
     
@@ -290,8 +266,7 @@ def main():
                 spotify_client,
                 playlist_id,
                 args.download_folder,
-                manual_verify=args.manual_verify,
-                manual_link=args.manual_link,
+                manual=args.manual,
                 dont_filter=args.dont_filter_results
             )
             

@@ -43,21 +43,10 @@ def print_banner():
     print(f"  {Colors.CYAN}refresh{Colors.RESET} {Colors.DIM}(r){Colors.RESET}   → Update CSV files with current downloads")
     print(f"  {Colors.MAGENTA}sanitize{Colors.RESET} {Colors.DIM}(z){Colors.RESET}  → Clean up extra spaces in downloaded filenames")
     print(f"  {Colors.ORANGE}flac{Colors.RESET}     {Colors.DIM}(f){Colors.RESET}  → Upgrade existing MP3s to FLAC")
+    print(f"  {Colors.DIM}manual{Colors.RESET}   {Colors.DIM}(m){Colors.RESET}  → Manually provide YouTube links for missing songs")
     print(f"  {Colors.YELLOW}help{Colors.RESET} {Colors.DIM}(h){Colors.RESET}      → Show detailed help")
     print(f"  {Colors.RED}quit{Colors.RESET} {Colors.DIM}(q){Colors.RESET}      → Exit launcher")
     
-    print(f"\n{Colors.BOLD}Common Options:{Colors.RESET}")
-    print(f"  {Colors.DIM}--download-folder PATH{Colors.RESET}    Custom download location")
-    print(f"  {Colors.DIM}--manual-verify{Colors.RESET}           Verify YouTube matches")
-    print(f"  {Colors.DIM}--interval N{Colors.RESET}              Check interval (minutes, for watch)")
-    
-    print(f"\n{Colors.BOLD}Note:{Colors.RESET}")
-    print(f"  {Colors.GREEN}Cleanup is automatic!{Colors.RESET} Removed songs are always deleted to stay in sync.")
-    
-    print(f"\n{Colors.BOLD}Examples:{Colors.RESET}")
-    print(f"  {Colors.DIM}sync{Colors.RESET}")
-    print(f"  {Colors.DIM}watch --interval 5{Colors.RESET}")
-    print(f"  {Colors.DIM}discover{Colors.RESET}")
     print(f"{Colors.CYAN}{'═' * 70}{Colors.RESET}\n")
 
 
@@ -74,13 +63,12 @@ def print_help():
     print(f"  {Colors.CYAN}refresh{Colors.RESET}, {Colors.DIM}r{Colors.RESET}    Update CSV files with current downloads")
     print(f"  {Colors.MAGENTA}sanitize{Colors.RESET}, {Colors.DIM}z{Colors.RESET}   Clean up extra spaces in downloaded filenames")
     print(f"  {Colors.ORANGE}flac{Colors.RESET}, {Colors.DIM}f{Colors.RESET}       Upgrade existing MP3s to FLAC")
+    print(f"  {Colors.DIM}manual{Colors.RESET}, {Colors.DIM}m{Colors.RESET}     Manually provide YouTube links for each missing song")
     print(f"  {Colors.YELLOW}help{Colors.RESET}, {Colors.DIM}h{Colors.RESET}       Show this help message")
     print(f"  {Colors.RED}quit{Colors.RESET}, {Colors.DIM}q, exit{Colors.RESET} Exit the launcher")
     
     print(f"\n{Colors.BOLD}Sync Options:{Colors.RESET}")
     print(f"  {Colors.DIM}--download-folder PATH{Colors.RESET}    Save downloads to custom location")
-    print(f"  {Colors.DIM}--manual-verify{Colors.RESET}           Show YouTube match and confirm before downloading")
-    print(f"  {Colors.DIM}--manual-link{Colors.RESET}             Manually provide YouTube links for each song")
     print(f"  {Colors.DIM}--dont-filter-results{Colors.RESET}     Disable result filtering")
     
     print(f"\n{Colors.BOLD}Watch Options:{Colors.RESET}")
@@ -121,6 +109,8 @@ def execute_command(command_line):
         command_map = {
             'sync': 'sync',
             's': 'sync',
+            'manual': 'manual',
+            'm': 'manual',
             'watch': 'watch',
             'w': 'watch',
             'discover': 'discover',
@@ -149,6 +139,9 @@ def execute_command(command_line):
         # Import and run the appropriate command
         if module_name == 'sync':
             from spotisyncer.commands.sync import main as cmd_main
+        elif module_name == 'manual':
+            from spotisyncer.commands.sync import main as cmd_main
+            args.append('--manual')
         elif module_name == 'watch':
             from spotisyncer.commands.watch import main as cmd_main
         elif module_name == 'discover':
