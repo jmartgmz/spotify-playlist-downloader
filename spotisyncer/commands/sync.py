@@ -47,8 +47,6 @@ def process_playlist(
     Returns:
         Dictionary with stats (total_tracks, missing, downloaded, skipped, failed)
     """
-    Logger.section(f"Processing: {playlist_id}")
-    
     stats = {
         'total_tracks': 0,
         'missing': 0,
@@ -58,16 +56,15 @@ def process_playlist(
     }
     
     try:
+        playlist_info = spotify_client.get_playlist_info(playlist_id)
+        playlist_name = playlist_info.get('name') if playlist_info else playlist_id
+        
+        Logger.section(f"Playlist: {playlist_name}")
+        
         # Fetch playlist info and tracks
         tracks = spotify_client.get_playlist_tracks(playlist_id)
         stats['total_tracks'] = len(tracks)
-        Logger.info(f"Found {len(tracks)} songs in playlist")
-        
-        playlist_info = spotify_client.get_playlist_info(playlist_id)
-        playlist_name = playlist_info.get('name') if playlist_info else None
-        
-        if playlist_name:
-            Logger.info(f"Playlist: {playlist_name}")
+        Logger.info(f"Found {len(tracks)} songs")
         
         # Setup playlist folder
         playlist_folder_name = FileManager.get_playlist_folder_name(playlist_id, playlist_name)
@@ -142,10 +139,7 @@ def process_playlist(
                     track['unable_to_find'] = True
                     stats['failed'] += 1
             
-            # Add spacing between downloads for readability
-            if idx < len(missing_tracks):
-                print()
-        
+            # Removed extra spacing after every song print for a cleaner list
         # Refresh downloads
         downloaded = FileManager.get_downloaded_songs(playlist_download_folder)
         csv_filepath = CSVManager.get_csv_filepath(playlist_id, playlist_name, playlist_download_folder)
@@ -260,7 +254,7 @@ def main():
     
     for idx, playlist_id in enumerate(playlists, 1):
         try:
-            Logger.progress(idx, len(playlists), "processing playlists")
+            Logger.progress(idx, len(playlists), "playlists")
             
             stats = process_playlist(
                 spotify_client,

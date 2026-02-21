@@ -33,9 +33,9 @@ class Colors:
 
 def print_banner():
     """Print welcome banner."""
-    print(f"\n{Colors.CYAN}╭{'─' * 68}╮{Colors.RESET}")
-    print(f"{Colors.CYAN}│{Colors.RESET}{Colors.BOLD}{Colors.GREEN}                      🎵 SPOTIFY PLAYLIST SYNC 🎵                     {Colors.RESET}{Colors.CYAN}│{Colors.RESET}")
-    print(f"{Colors.CYAN}╰{'─' * 68}╯{Colors.RESET}")
+    print(f"\n{Colors.DIM}╭{'─' * 68}╮{Colors.RESET}")
+    print(f"{Colors.DIM}│{Colors.RESET}{Colors.BOLD}                      🎵 SPOTIFY PLAYLIST SYNC 🎵                     {Colors.RESET}{Colors.DIM}│{Colors.RESET}")
+    print(f"{Colors.DIM}╰{'─' * 68}╯{Colors.RESET}")
     
     print(f"\n{Colors.BOLD}{Colors.UNDERLINE}AVAILABLE COMMANDS{Colors.RESET}\n")
     
@@ -45,18 +45,18 @@ def print_banner():
     print(f"  {Colors.CYAN}▶ refresh{Colors.RESET}  {Colors.DIM}(r){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Update CSV files with current downloads")
     print(f"  {Colors.MAGENTA}▶ sanitize{Colors.RESET} {Colors.DIM}(z){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Clean up extra spaces in downloaded filenames")
     print(f"  {Colors.ORANGE}▶ flac{Colors.RESET}     {Colors.DIM}(f){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Upgrade existing MP3s to FLAC")
-    print(f"  {Colors.DIM}▶ manual{Colors.RESET}   {Colors.DIM}(m){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Manually provide YouTube links for missing songs")
+    print(f"  {Colors.HEADER}▶ manual{Colors.RESET}   {Colors.DIM}(m){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Manually provide YouTube links for missing songs")
     print(f"  {Colors.YELLOW}▶ help{Colors.RESET}     {Colors.DIM}(h){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Show detailed help")
     print(f"  {Colors.RED}▶ quit{Colors.RESET}     {Colors.DIM}(q){Colors.RESET}  {Colors.DIM}│{Colors.RESET} Exit launcher")
     
-    print(f"\n{Colors.CYAN}{'━' * 70}{Colors.RESET}\n")
+    print(f"\n{Colors.DIM}{'━' * 70}{Colors.RESET}\n")
 
 
 def print_help():
     """Print help message."""
-    print(f"\n{Colors.CYAN}{'═' * 70}{Colors.RESET}")
-    print(f"{Colors.BOLD}{Colors.BLUE}  📚  Command Reference  📚{Colors.RESET}")
-    print(f"{Colors.CYAN}{'═' * 70}{Colors.RESET}")
+    print(f"\n{Colors.DIM}{'═' * 70}{Colors.RESET}")
+    print(f"{Colors.BOLD}  📚  Command Reference  📚{Colors.RESET}")
+    print(f"{Colors.DIM}{'═' * 70}{Colors.RESET}")
     
     print(f"\n{Colors.BOLD}Commands:{Colors.RESET}")
     print(f"  {Colors.GREEN}sync{Colors.RESET}, {Colors.DIM}s{Colors.RESET}       Download missing songs from playlists")
@@ -65,7 +65,7 @@ def print_help():
     print(f"  {Colors.CYAN}refresh{Colors.RESET}, {Colors.DIM}r{Colors.RESET}    Update CSV files with current downloads")
     print(f"  {Colors.MAGENTA}sanitize{Colors.RESET}, {Colors.DIM}z{Colors.RESET}   Clean up extra spaces in downloaded filenames")
     print(f"  {Colors.ORANGE}flac{Colors.RESET}, {Colors.DIM}f{Colors.RESET}       Upgrade existing MP3s to FLAC")
-    print(f"  {Colors.DIM}manual{Colors.RESET}, {Colors.DIM}m{Colors.RESET}     Manually provide YouTube links for each missing song")
+    print(f"  {Colors.HEADER}manual{Colors.RESET}, {Colors.DIM}m{Colors.RESET}     Manually provide YouTube links for each missing song")
     print(f"  {Colors.YELLOW}help{Colors.RESET}, {Colors.DIM}h{Colors.RESET}       Show this help message")
     print(f"  {Colors.RED}quit{Colors.RESET}, {Colors.DIM}q, exit{Colors.RESET} Exit the launcher")
     
@@ -105,6 +105,12 @@ def execute_command(command_line):
         
         if command in ['help', 'h', '?']:
             print_help()
+            return True
+            
+        if command in ['clear', 'cls']:
+            import os
+            os.system('cls' if os.name == 'nt' else 'clear')
+            print_banner()
             return True
         
         # Map command aliases
@@ -181,7 +187,7 @@ def main():
         while True:
             try:
                 # Colored prompt
-                prompt = f"{Colors.BOLD}{Colors.PURPLE}spotify-sync{Colors.RESET}{Colors.CYAN}>{Colors.RESET} "
+                prompt = f"{Colors.BOLD}{Colors.CYAN}spotify-sync{Colors.RESET}{Colors.DIM}>{Colors.RESET} "
                 command_line = input(prompt).strip()
                 
                 if not command_line:
