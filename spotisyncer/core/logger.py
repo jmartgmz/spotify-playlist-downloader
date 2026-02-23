@@ -48,7 +48,7 @@ class Logger:
     @staticmethod
     def info(message: str) -> None:
         """Log an info message."""
-        print(Logger._format_message(MessageType.INFO, message, "ℹ "))
+        print(Logger._format_message(MessageType.INFO, message, "ℹ  "))
 
     @staticmethod
     def success(message: str) -> None:
@@ -68,13 +68,17 @@ class Logger:
     @staticmethod
     def header(message: str) -> None:
         """Log a section header."""
-        print(f"\n{'='*70}")
+        print(f"\n\033[36m╭{'─' * 66}╮\033[0m")
         # Temporarily disable timestamps for header
         orig_timestamps = Logger.ENABLE_TIMESTAMPS
         Logger.ENABLE_TIMESTAMPS = False
-        print(Logger._format_message(MessageType.INFO, f"{message}", "🎵 "))
+        
+        clean_msg = message.replace('🎵', '').strip()
+        centered_msg = f" {clean_msg} ".center(66, " ")
+        
+        print(f"\033[36m│\033[0m\033[1m{centered_msg}\033[0m\033[36m│\033[0m")
         Logger.ENABLE_TIMESTAMPS = orig_timestamps
-        print(f"{'='*70}\n")
+        print(f"\033[36m╰{'─' * 66}╯\033[0m")
 
     @staticmethod
     def progress(current: int, total: int, item_name: str = "", show_eta: bool = False) -> None:
@@ -83,26 +87,25 @@ class Logger:
             return
             
         percentage = (current / total * 100)
-        bar_length = 30
+        bar_length = 20
         filled = int(bar_length * current / total)
         bar = "█" * filled + "░" * (bar_length - filled)
         
         # Format the progress line
-        progress_text = f"[{bar}] {current}/{total} ({percentage:.1f}%)"
-        
-        if item_name:
-            progress_text += f" - {item_name}"
+        progress_text = f"[{bar}] {current}/{total}"
         
         if show_eta and current > 0:
-            # Simple ETA calculation based on current progress
             elapsed = time.time() - getattr(Logger, '_progress_start_time', time.time())
             if current > 0:
                 eta_seconds = (elapsed / current) * (total - current)
                 eta_minutes = int(eta_seconds // 60)
                 eta_seconds = int(eta_seconds % 60)
-                progress_text += f" - ETA: {eta_minutes:02d}:{eta_seconds:02d}"
-        
-        print(Logger._format_message(MessageType.INFO, progress_text, "📊 "))
+                progress_text += f" (ETA {eta_minutes:02d}:{eta_seconds:02d})"
+                
+        if item_name:
+            progress_text += f" - {item_name}"
+            
+        print(Logger._format_message(MessageType.INFO, progress_text, ""))
 
     @staticmethod
     def start_progress(item_name: str = ""):
@@ -115,16 +118,17 @@ class Logger:
     def section(message: str) -> None:
         """Log a section divider."""
         timestamp = Logger._get_timestamp()
-        print(f"\n{timestamp}--- {message} ---")
+        print(f"\n{timestamp}\033[1m\033[95m▶\033[0m {message}")
 
     @staticmethod
     def summary(label: str, value: str, success: bool = True) -> None:
         """Log a summary line."""
-        msg_type = MessageType.SUCCESS if success else MessageType.WARNING
+        color = "\033[92m" if success else "\033[93m"
+        reset = "\033[0m"
         # Temporarily disable timestamps for summary
         orig_timestamps = Logger.ENABLE_TIMESTAMPS
         Logger.ENABLE_TIMESTAMPS = False
-        print(Logger._format_message(msg_type, f"{label}: {value}", "📈 " if success else "📉 "))
+        print(f"  \033[90m│\033[0m {label.ljust(25)} {color}{value}{reset}")
         Logger.ENABLE_TIMESTAMPS = orig_timestamps
 
     @staticmethod

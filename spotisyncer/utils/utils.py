@@ -60,6 +60,27 @@ class FilenameSanitizer:
             filename = filename.replace(invalid_char, replacement)
         return filename
 
+    @staticmethod
+    def clean_extra_spaces(filename: str) -> str:
+        """
+        Cleans up formatting issues in filenames:
+        - Replaces old spotdl ' _ ' replacements with a single space.
+        - Reduces multiple consecutive spaces to a single space.
+        """
+        import re
+        # Fix the specific unallowed character spotdl replaced with ' _ '
+        cleaned = filename.replace(' _ ', ' ')
+        # Trim multiple spaces down to one
+        cleaned = re.sub(r'\s+', ' ', cleaned)
+        
+        # Clean up spaces right before the extension
+        if '.' in cleaned:
+            parts = cleaned.rsplit('.', 1)
+            parts[0] = parts[0].strip()
+            return f"{parts[0]}.{parts[1]}".strip()
+            
+        return cleaned.strip()
+
 
 class UserInput:
     """Handles user input and confirmations."""

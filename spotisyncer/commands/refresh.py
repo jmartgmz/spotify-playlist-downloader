@@ -1,41 +1,43 @@
 #!/usr/bin/env python3
 """
 Quick CSV updater that checks downloaded songs against the CSV file.
-Much faster than running check.py as it doesn't query Spotify API.
+Much faster than running sync.py as it doesn't query Spotify API.
 
-Usage:
-    python update_csv.py --download-folder "/path/to/folder"
-    python update_csv.py  # Uses default downloaded_songs folder
+Examples:
+    python refresh.py --download-folder "/path/to/folder"
+    python refresh.py  # Uses default downloaded_songs folder
 """
 
 import os
 import os
 import argparse
 import glob
-from spotify_sync.core.spotify_api import SpotifyClient
-from spotify_sync.core.file_manager import FileManager
-from spotify_sync.core.csv_manager import CSVManager
-from spotify_sync.utils.utils import PlaylistReader
-from spotify_sync.core.logger import Logger
-from spotify_sync.utils.error_handler import ErrorHandler
-from spotify_sync.core.settings_manager import settings, Config
+from spotisyncer.core.spotify_api import SpotifyClient
+from spotisyncer.core.file_manager import FileManager
+from spotisyncer.core.csv_manager import CSVManager
+from spotisyncer.utils.utils import PlaylistReader
+from spotisyncer.core.logger import Logger
+from spotisyncer.utils.error_handler import ErrorHandler
+from spotisyncer.core.settings_manager import settings, Config
 
 
-def find_csv_files(playlist_folder: str) -> list:
+def find_csv_files(download_folder: str) -> list:
     """
-    Find all CSV files in the playlist_songs folder.
+    Find all CSV files in the download folder subdirectories.
     
     Args:
-        playlist_folder: Path to folder containing CSV files
+        download_folder: Path to folder containing downloaded songs and CSVs
         
     Returns:
         List of CSV file paths
     """
     csv_files = []
     try:
-        if os.path.exists(playlist_folder):
-            for file in glob.glob(os.path.join(playlist_folder, '*.csv')):
-                csv_files.append(file)
+        if os.path.exists(download_folder):
+            for root, dirs, files in os.walk(download_folder):
+                for file in files:
+                    if file.endswith('.csv'):
+                        csv_files.append(os.path.join(root, file))
     except Exception as e:
         ErrorHandler.handle_exception(e, "Error scanning CSV folder")
     
@@ -73,12 +75,12 @@ def main():
         ErrorHandler.handle_fatal_exception(e, "Invalid download folder")
         return
     
-    # Find all CSV files
-    Logger.info(f"Scanning for CSV files in {playlist_folder}...")
-    csv_files = find_csv_files(playlist_folder)
+    # Find all CSV files in the download folder
+    Logger.info(f"Scanning for CSV files in {download_folder}...")
+    csv_files = find_csv_files(download_folder)
     
     if not csv_files:
-        Logger.warning(f"No CSV files found in {playlist_folder}")
+        Logger.warning(f"No CSV files found in {download_folder}")
         return
     
     Logger.success(f"Found {len(csv_files)} CSV file(s)")
@@ -92,7 +94,7 @@ def main():
             Logger.progress(idx, len(csv_files), "updating CSV files")
             
             playlist_name = os.path.basename(csv_file).replace('.csv', '')
-            playlist_download_folder = os.path.join(download_folder, playlist_name)
+            playlist_download_folder = os.path.dirname(csv_file)
             
             if not os.path.exists(playlist_download_folder):
                 Logger.warning(f"Skipped (folder not found): {playlist_name}")
@@ -100,7 +102,7 @@ def main():
             
             Logger.info(f"Updating: {playlist_name}")
             downloaded = FileManager.get_downloaded_songs(playlist_download_folder)
-            updated_count = CSVManager.update_csv_file(csv_file, downloaded)
+            updated_count = CSVManager.update_csv_file(csv_file, downloaded, FileManager.is_song_downloaded)
             
             if updated_count >= 0:
                 Logger.success(f"Updated {playlist_name}")

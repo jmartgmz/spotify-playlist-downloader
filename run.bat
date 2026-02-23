@@ -3,11 +3,7 @@ setlocal enabledelayedexpansion
 REM Spotify Playlist Sync Launcher for Windows
 REM This script activates the virtual environment and runs the interactive launcher
 
-echo.
-echo ========================================
-echo   Spotify Playlist Sync - Launcher
-echo ========================================
-echo.
+
 
 REM Check if Python is available
 python --version >nul 2>&1
@@ -20,7 +16,6 @@ if errorlevel 1 (
 
 REM Check if virtual environment exists
 if exist .venv\Scripts\activate.bat (
-    echo Activating virtual environment...
     call .venv\Scripts\activate.bat
 ) else (
     echo Virtual environment not found. Setting up...
@@ -129,9 +124,6 @@ if not exist .env (
 )
 :env_created
 
-REM Run the launcher
-echo Starting Spotify Playlist Sync...
-echo.
 python launcher.py
 
 REM Keep window open if there was an error

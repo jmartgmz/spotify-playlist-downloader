@@ -1,7 +1,6 @@
 spotipy
-spotdl
+git+https://github.com/jelte1/SpotiFLAC-Command-Line-Interface.git
 python-dotenv
 yt-dlp
 mutagen
 setuptools<81
-flask

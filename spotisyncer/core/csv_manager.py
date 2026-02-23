@@ -98,33 +98,47 @@ class CSVManager:
         os.makedirs(output_folder, exist_ok=True)
         filepath = CSVManager.get_csv_filepath(playlist_id, playlist_name, output_folder)
         
+        # Alphabetize tracks from A-Z before writing
+        sorted_tracks = sorted(tracks, key=lambda t: f"{t['artists'][0] if t['artists'] else 'Unknown'} - {t['name']}".lower())
+        
+        from spotisyncer.core.file_manager import FileManager
+        
         with open(filepath, "w", encoding="utf-8", newline='') as f:
             writer = csv.writer(f)
-            writer.writerow(["Artist", "Song Title", "Status"])
+            writer.writerow(["Artist", "Song Title", "Status", "Format"])
             
-            for track in tracks:
+            for track in sorted_tracks:
                 artist = track['artists'][0] if track['artists'] else 'Unknown'
                 
-                # Determine status
-                if is_song_downloaded_func(track, downloaded_set):
+                # Determine status and format
+                status = "missing"
+                file_format = ""
+                
+                # Use find_downloaded_song direct if passed as is_song_downloaded_func, 
+                # but handle either boolean or dict return for safety
+                if hasattr(FileManager, 'find_downloaded_song'):
+                    file_info = FileManager.find_downloaded_song(track, downloaded_set)
+                    if file_info:
+                        status = "downloaded"
+                        file_format = file_info.get('ext', '')
+                elif is_song_downloaded_func(track, downloaded_set):
                     status = "downloaded"
                 elif track.get('unable_to_find'):
                     status = "unable to be found"
-                else:
-                    status = "missing"
                 
-                writer.writerow([artist, track['name'], status])
+                writer.writerow([artist, track['name'], status, file_format])
         
         print(f"Wrote song list to {filepath}")
 
     @staticmethod
-    def update_csv_file(csv_filepath: str, downloaded_set: set) -> int:
+    def update_csv_file(csv_filepath: str, downloaded_set: set, is_song_downloaded_func=None) -> int:
         """
         Update a CSV file with current download status.
         
         Args:
             csv_filepath: Path to CSV file
             downloaded_set: Set of downloaded song filenames
+            is_song_downloaded_func: Optional function to check if song is downloaded
             
         Returns:
             Number of songs updated
@@ -150,23 +164,56 @@ class CSVManager:
             song_title = row.get('Song Title', '')
             artist = row.get('Artist', '')
             current_status = row.get('Status', 'missing')
+            current_format = row.get('Format', '')
             
-            # Simple matching: check if song title is in any downloaded file
             is_downloaded = False
-            for downloaded_file in downloaded_set:
-                if song_title.lower() in downloaded_file:
-                    is_downloaded = True
-                    break
+            file_format = current_format
             
-            if is_downloaded and current_status != 'downloaded':
-                row['Status'] = 'downloaded'
-                updated_count += 1
-                print(f"  Updated to downloaded: {artist} - {song_title}")
+            if is_song_downloaded_func:
+                mock_track = {'name': song_title, 'artists': [artist]}
+                
+                # Check if we can get the format (needs find_downloaded_song instead of bool equivalent)
+                from spotisyncer.core.file_manager import FileManager
+                if hasattr(FileManager, 'find_downloaded_song'):
+                    file_info = FileManager.find_downloaded_song(mock_track, downloaded_set)
+                    if file_info:
+                        is_downloaded = True
+                        file_format = file_info.get('ext', '')
+                elif is_song_downloaded_func(mock_track, downloaded_set):
+                    is_downloaded = True
+            else:
+                # Simple matching: check if song title is in any downloaded file
+                for downloaded_file, file_info in downloaded_set.items():
+                    if song_title.lower() in downloaded_file:
+                        is_downloaded = True
+                        file_format = file_info.get('ext', '') if isinstance(file_info, dict) else ''
+                        break
+            
+            if is_downloaded:
+                if current_status != 'downloaded' or current_format != file_format:
+                    row['Status'] = 'downloaded'
+                    row['Format'] = file_format
+                    updated_count += 1
+                    print(f"  Updated to downloaded ({file_format}): {artist} - {song_title}")
+            else:
+                # Add default blank format if key missing
+                if 'Format' not in row:
+                    row['Format'] = ''
+                    
+                # If it used to be downloaded but isn't anymore (file was deleted)
+                if current_status == 'downloaded':
+                    row['Status'] = 'missing'
+                    row['Format'] = ''
+                    updated_count += 1
+                    print(f"  Downgraded to missing (file deleted): {artist} - {song_title}")
         
-        # Write back to CSV
+        # Write back to CSV (alphabetized A-Z)
         try:
+            # Sort the rows mimicking File Explorer behavior (case-insensitive Artist - Title)
+            rows.sort(key=lambda r: f"{r.get('Artist', '')} - {r.get('Song Title', '')}".lower())
+            
             with open(csv_filepath, 'w', encoding='utf-8', newline='') as f:
-                writer = csv.DictWriter(f, fieldnames=['Artist', 'Song Title', 'Status'])
+                writer = csv.DictWriter(f, fieldnames=['Artist', 'Song Title', 'Status', 'Format'])
                 writer.writeheader()
                 writer.writerows(rows)
             print(f"Updated {updated_count} songs in {os.path.basename(csv_filepath)}")

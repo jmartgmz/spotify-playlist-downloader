@@ -1,10 +1,10 @@
 """
-Downloader module for spotdl operations.
-Handles downloading songs from Spotify/YouTube URLs.
+Downloader module for SpotiFLAC operations.
+Handles downloading songs from Spotify URLs in FLAC format.
 """
 
 import warnings
-# Suppress spotdl warnings before any subprocess calls
+# Suppress warnings before any subprocess calls
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 import os
@@ -15,72 +15,57 @@ import shutil
 import sys
 from typing import Optional, Dict
 import urllib.request
+from mutagen.flac import FLAC
 from mutagen.mp3 import MP3
 from mutagen.easyid3 import EasyID3
-from spotify_sync.utils.utils import FilenameSanitizer
+from mutagen.id3 import ID3
+from mutagen.id3._frames import APIC
+from spotisyncer.utils.utils import FilenameSanitizer
+import contextlib
+import io
+
+try:
+    from SpotiFLAC import SpotiFLAC  # type: ignore
+    SPOTIFLAC_AVAILABLE = True
+except ImportError:
+    SpotiFLAC = None  # type: ignore
+    SPOTIFLAC_AVAILABLE = False
 
 
-class SpotdlDownloader:
-    """Manages spotdl download operations."""
+class SpotiFLACDownloader:
+    """Manages SpotiFLAC download operations."""
 
     @staticmethod
-    def find_spotdl() -> str:
+    def check_spotiflac_available() -> bool:
         """
-        Find spotdl executable in PATH or virtualenv.
+        Check if SpotiFLAC module is available.
         
         Returns:
-            Path to spotdl executable
-            
-        Raises:
-            RuntimeError: If spotdl is not found
+            True if SpotiFLAC is available, False otherwise
         """
-        spotdl_path = shutil.which('spotdl')
-        if spotdl_path:
-            return spotdl_path
-        
-        venv_spotdl = os.path.join(os.path.dirname(sys.executable), 'spotdl')
-        if os.path.exists(venv_spotdl):
-            return venv_spotdl
-        
-        raise RuntimeError("spotdl not found. Please install spotdl in your environment.")
+        return SPOTIFLAC_AVAILABLE
 
     @staticmethod
     def get_youtube_url(track: dict, dont_filter: bool = False) -> Optional[str]:
         """
-        Get the YouTube URL for a song using spotdl url command.
+        Deprecated: SpotiFLAC downloads directly from Spotify, not YouTube.
+        This method is kept for backwards compatibility but returns None.
         
         Args:
             track: Track dictionary with 'url' key
-            dont_filter: Whether to disable result filtering
+            dont_filter: Whether to disable result filtering (unused)
             
         Returns:
-            YouTube URL or None if not found
+            None (not applicable for SpotiFLAC)
         """
-        try:
-            spotdl_path = SpotdlDownloader.find_spotdl()
-            cmd = [spotdl_path, 'url', track['url']]
-            if dont_filter:
-                cmd.append('--dont-filter-results')
-            
-            # Only capture stdout, discard stderr (which has progress messages)
-            result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, check=False)
-            
-            if result.returncode != 0:
-                return None
-                
-            youtube_url = result.stdout.strip()
-            # Validate it's actually a URL
-            if youtube_url and youtube_url.startswith('http'):
-                return youtube_url
-            return None
-        except Exception as e:
-            print(f"Failed to get YouTube URL for {track['name']}: {e}")
-            return None
+        # SpotiFLAC downloads directly from Spotify, no YouTube URL needed
+        return None
 
     @staticmethod
     def download_from_youtube(youtube_url: str, download_folder: str, track: Optional[Dict] = None) -> bool:
         """
-        Download audio from YouTube URL using yt-dlp and apply Spotify metadata via ffmpeg.
+        Download audio from YouTube URL using yt-dlp and apply Spotify metadata.
+        Downloads as MP3 format for manual input mode.
         
         Args:
             youtube_url: YouTube URL to download from
@@ -139,18 +124,26 @@ class SpotdlDownloader:
                     
                     # Sanitize filename using centralized sanitizer
                     safe_title = FilenameSanitizer.sanitize(title)
-                    final_filename = f"{artist} - {safe_title}.mp3"
+                    safe_artist = FilenameSanitizer.sanitize(artist)
+                    final_filename = f"{safe_artist} - {safe_title}.mp3"
                     final_filepath = os.path.join(download_folder, final_filename)
                     
                     # Rename file first
-                    os.rename(downloaded_file, final_filepath)
+                    if downloaded_file != final_filepath:
+                        if os.path.exists(final_filepath):
+                            os.remove(downloaded_file)  # Remove duplicate
+                            return True
+                        os.rename(downloaded_file, final_filepath)
                     
                     # Apply metadata using EasyID3
                     try:
                         audio = EasyID3(final_filepath)
                     except Exception:
                         # If no ID3 tag exists, create one
-                        audio = EasyID3()
+                        audio = MP3(final_filepath)
+                        audio.add_tags()
+                        audio.save()
+                        audio = EasyID3(final_filepath)
                     
                     # Set metadata
                     audio['title'] = [title]
@@ -166,8 +159,6 @@ class SpotdlDownloader:
                     cover_art_url = track.get('cover_art_url')
                     if cover_art_url:
                         try:
-                            from mutagen.id3 import ID3
-                            from mutagen.id3._frames import APIC
                             cover_path = os.path.join(download_folder, 'cover_temp.jpg')
                             urllib.request.urlretrieve(cover_art_url, cover_path)
                             
@@ -185,7 +176,7 @@ class SpotdlDownloader:
                                 encoding=3,
                                 mime='image/jpeg',
                                 type=3,
-                                desc='',
+                                desc='Cover',
                                 data=cover_data
                             ))
                             id3.save(final_filepath, v2_version=3)
@@ -211,66 +202,93 @@ class SpotdlDownloader:
     @staticmethod
     def download_from_spotify(track: dict, download_folder: str, dont_filter: bool = False) -> tuple[bool, str]:
         """
-        Download a song from Spotify URL using spotdl.
+        Download a song from Spotify URL using SpotiFLAC Python module.
         
         Args:
             track: Track dictionary with 'url' key
             download_folder: Folder to save the download
-            dont_filter: Whether to disable result filtering
+            dont_filter: Whether to disable result filtering (unused for SpotiFLAC)
             
         Returns:
             Tuple of (success: bool, error_message: str)
         """
         try:
-            # Get list of existing MP3 files before download
-            existing_mp3s = set()
+            # Check if SpotiFLAC is available
+            if not SPOTIFLAC_AVAILABLE or SpotiFLAC is None:
+                return False, "SpotiFLAC module not installed. Install with: pip install git+https://github.com/jelte1/SpotiFLAC-Command-Line-Interface.git"
+            
+            # Get list of existing FLAC files before download
+            existing_flacs = set()
             if os.path.exists(download_folder):
                 for file in os.listdir(download_folder):
-                    if file.endswith('.mp3'):
-                        existing_mp3s.add(file)
+                    if file.endswith('.flac'):
+                        existing_flacs.add(file)
             
-            spotdl_path = SpotdlDownloader.find_spotdl()
-            cmd = [spotdl_path, track['url'], '--output', download_folder]
-            if dont_filter:
-                cmd.append('--dont-filter-results')
+            # Get track metadata for filename
+            artists_list = track.get('artists', [])
+            artist = ', '.join(artists_list) if isinstance(artists_list, list) else str(artists_list)
+            if not artist:
+                artist = 'Unknown'
             
-            # Capture stderr to get error messages, suppress stdout
-            result = subprocess.run(
-                cmd, 
-                stdout=subprocess.DEVNULL, 
-                stderr=subprocess.PIPE,
-                text=True,
-                check=False
-            )
+            title = track.get('name', 'Unknown')
             
-            # Verify that a new MP3 file was actually created
-            current_mp3s = set()
+            # Suppress SpotiFLAC's verbose output
+            # Redirect stdout and stderr to suppress all the download progress messages
+            
+            # Use SpotiFLAC Python module to download
+            # SpotiFLAC will try multiple services: tidal, qobuz, deezer, amazon
+            try:
+                # Suppress all output from SpotiFLAC
+                with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    SpotiFLAC(  # type: ignore
+                        url=track['url'],
+                        output_dir=download_folder,
+                        services=["tidal", "qobuz", "deezer", "amazon"],
+                        filename_format="{artist} - {title}",
+                        use_track_numbers=False,
+                        use_artist_subfolders=False,
+                        use_album_subfolders=False,
+                        loop=None
+                    )
+            except Exception as e:
+                error_msg = str(e)
+                if 'not found' in error_msg.lower():
+                    return False, "Track not available on any service"
+                elif 'authentication' in error_msg.lower() or 'credentials' in error_msg.lower():
+                    return False, "Authentication error"
+                elif 'rate limit' in error_msg.lower():
+                    return False, "Rate limit reached"
+                else:
+                    return False, f"Download failed: {error_msg}"
+            
+            # Verify that a new FLAC file was actually created
+            current_flacs = set()
             if os.path.exists(download_folder):
                 for file in os.listdir(download_folder):
-                    if file.endswith('.mp3'):
-                        current_mp3s.add(file)
+                    if file.endswith('.flac'):
+                        current_flacs.add(file)
             
-            new_mp3s = current_mp3s - existing_mp3s
+            new_flacs = current_flacs - existing_flacs
             
-            # If download failed, extract the reason
-            if len(new_mp3s) == 0:
-                error_msg = ""
-                
-                if result.stderr:
-                    if 'Could not match any of the results on YouTube' in result.stderr:
-                        error_msg = "No matching YouTube video found"
-                    elif 'Unable to get audio stream' in result.stderr:
-                        error_msg = "Unable to extract audio from YouTube"
-                    elif 'LookupError' in result.stderr:
-                        error_msg = "No matching YouTube video found"
-                    elif 'HTTP Error 429' in result.stderr or 'Too Many Requests' in result.stderr:
-                        error_msg = "YouTube rate limit reached"
-                    elif result.returncode != 0:
-                        error_msg = f"Download error (code {result.returncode})"
-                
-                return False, error_msg
+            # Clean up spacing in newly downloaded FLAC files
+            for flac_file in new_flacs:
+                old_path = os.path.join(download_folder, flac_file)
+                new_name = FilenameSanitizer.clean_extra_spaces(flac_file)
+                if new_name != flac_file:
+                    new_path = os.path.join(download_folder, new_name)
+                    try:
+                        if os.path.exists(new_path):
+                            os.remove(new_path)
+                        os.rename(old_path, new_path)
+                    except Exception as e:
+                        print(f"⚠ Could not sanitize filename spacing: {str(e)}")
             
-            # Return True if at least one new MP3 was created
+            # If download failed, return error
+            if len(new_flacs) == 0:
+                return False, "No FLAC file was created"
+            
+            # File was successfully downloaded - no need to print here, caller handles it
+            # Return True if at least one new FLAC was created
             return True, ""
             
         except Exception as e:

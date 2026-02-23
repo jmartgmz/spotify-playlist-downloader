@@ -6,7 +6,7 @@ Handles downloading songs, managing folders, and file name normalization.
 import os
 import glob
 from typing import Set, Tuple, Optional, Dict
-from spotify_sync.utils.utils import FilenameSanitizer
+from spotisyncer.utils.utils import FilenameSanitizer
 from mutagen import File as MutagenFile
 
 
@@ -48,7 +48,8 @@ class FileManager:
                         downloaded[title.lower().strip()] = {
                             'title': title,
                             'artist': artist if artist else '',
-                            'path': file_path
+                            'path': file_path,
+                            'ext': ext.lower().replace('.', '')
                         }
                         continue
             except:
@@ -58,7 +59,8 @@ class FileManager:
             downloaded[name.lower()] = {
                 'title': name,
                 'artist': '',
-                'path': file_path
+                'path': file_path,
+                'ext': ext.lower().replace('.', '')
             }
         
         return downloaded
@@ -86,7 +88,8 @@ class FileManager:
     @staticmethod
     def is_song_downloaded(track: dict, downloaded_dict: Dict[str, dict]) -> bool:
         """
-        Check if a song is downloaded by comparing metadata.
+        Check if a song is downloaded by comparing metadata and physical filename.
+        Uses aggressive fuzzy matching by stripping punctuation and spacing.
         
         Args:
             track: Track dictionary with 'name' and 'artists' keys
@@ -95,21 +98,59 @@ class FileManager:
         Returns:
             True if song is found in downloaded dict
         """
-        track_title = track.get('name', '').lower().strip()
+        return bool(FileManager.find_downloaded_song(track, downloaded_dict))
+
+    @staticmethod
+    def find_downloaded_song(track: dict, downloaded_dict: Dict[str, dict]) -> Optional[dict]:
+        """
+        Find a song in the downloaded dictionary and return its file info.
+        
+        Args:
+            track: Track dictionary with 'name' and 'artists' keys
+            downloaded_dict: Dictionary of downloaded songs from get_downloaded_songs()
+            
+        Returns:
+            Dictionary with file info if found, None otherwise
+        """
+        import os
+        import re
+
+        def simplify(text: str) -> str:
+            """Remove all non-alphanumeric characters for aggressive fuzzy matching."""
+            return re.sub(r'[\W_]+', '', str(text).lower())
+
+        track_title = track.get('name', '').strip()
         
         if not track_title:
-            return False
+            return None
+            
+        simplified_track = simplify(track_title)
         
-        # Direct title match (most reliable)
-        if track_title in downloaded_dict:
-            return True
+        if not simplified_track:
+            return None
         
-        # Partial title match as fallback
-        for downloaded_title in downloaded_dict.keys():
-            if track_title in downloaded_title or downloaded_title in track_title:
-                return True
+        # We need to simplify the keys of downloaded_dict to check direct match
+        for key, file_info in downloaded_dict.items():
+            if simplify(key) == simplified_track:
+                return file_info
         
-        return False
+        # Partial title match and filename fallback
+        for downloaded_title, file_info in downloaded_dict.items():
+            simplified_download = simplify(downloaded_title)
+            
+            # 1. Partial title metadata match
+            if simplified_track in simplified_download or simplified_download in simplified_track:
+                return file_info
+                
+            # 2. Filename fallback match
+            if 'path' in file_info:
+                filename = os.path.basename(file_info['path'])
+                simplified_filename = simplify(filename)
+                
+                if simplified_track in simplified_filename:
+                    return file_info
+        
+        return None
 
     @staticmethod
     def get_playlist_folder_name(playlist_id: str, playlist_name: Optional[str] = None) -> str:

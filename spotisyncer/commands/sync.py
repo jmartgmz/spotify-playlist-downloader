@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 """
 One-time checker for Spotify playlists.
-Fetches all songs from specified playlists, checks which are downloaded,
-and downloads any missing songs using spotdl.
+Fetches all songs from specified playlists, check which are downloaded, and download any missing songs via YouTube.
 
-Usage:
-    python check.py --download-folder "/path/to/folder"
-    python check.py --manual-verify --dont-filter-results
-    python check.py --manual-link
+    Examples:
+        python sync.py --download-folder "/path/to/folder"
+        python sync.py --manual
 """
 
 import warnings
@@ -17,23 +15,22 @@ warnings.filterwarnings('ignore')
 import os
 import argparse
 import sys
-from spotify_sync.core.spotify_api import SpotifyClient
-from spotify_sync.core.file_manager import FileManager
-from spotify_sync.core.downloader import SpotdlDownloader
-from spotify_sync.core.csv_manager import CSVManager
-from spotify_sync.core.cleanup_manager import CleanupManager
-from spotify_sync.utils.utils import PlaylistReader, UserInput
-from spotify_sync.core.logger import Logger
-from spotify_sync.utils.error_handler import ErrorHandler, ValidationError, SpotifyError
-from spotify_sync.core.settings_manager import settings, Config
+from spotisyncer.core.spotify_api import SpotifyClient
+from spotisyncer.core.file_manager import FileManager
+from spotisyncer.core.downloader import SpotiFLACDownloader
+from spotisyncer.core.csv_manager import CSVManager
+from spotisyncer.core.cleanup_manager import CleanupManager
+from spotisyncer.utils.utils import PlaylistReader, UserInput
+from spotisyncer.core.logger import Logger
+from spotisyncer.utils.error_handler import ErrorHandler, ValidationError, SpotifyError
+from spotisyncer.core.settings_manager import settings, Config
 
 
 def process_playlist(
     spotify_client: SpotifyClient,
     playlist_id: str,
     download_folder: str,
-    manual_verify: bool = False,
-    manual_link: bool = False,
+    manual: bool = False,
     dont_filter: bool = False
 ) -> dict:
     """
@@ -44,15 +41,12 @@ def process_playlist(
         spotify_client: SpotifyClient instance
         playlist_id: Spotify playlist ID or URL
         download_folder: Base folder for downloads
-        manual_verify: Show YouTube URL and ask for confirmation
-        manual_link: Manually provide YouTube links
-        dont_filter: Disable spotdl result filtering
+        manual: Manually provide YouTube links
+        dont_filter: Disable result filtering
         
     Returns:
         Dictionary with stats (total_tracks, missing, downloaded, skipped, failed)
     """
-    Logger.section(f"Processing: {playlist_id}")
-    
     stats = {
         'total_tracks': 0,
         'missing': 0,
@@ -62,16 +56,15 @@ def process_playlist(
     }
     
     try:
+        playlist_info = spotify_client.get_playlist_info(playlist_id)
+        playlist_name = playlist_info.get('name') if playlist_info else playlist_id
+        
+        Logger.section(f"Playlist: {playlist_name}")
+        
         # Fetch playlist info and tracks
         tracks = spotify_client.get_playlist_tracks(playlist_id)
         stats['total_tracks'] = len(tracks)
-        Logger.info(f"Found {len(tracks)} songs in playlist")
-        
-        playlist_info = spotify_client.get_playlist_info(playlist_id)
-        playlist_name = playlist_info.get('name') if playlist_info else None
-        
-        if playlist_name:
-            Logger.info(f"Playlist: {playlist_name}")
+        Logger.info(f"Found {len(tracks)} songs")
         
         # Setup playlist folder
         playlist_folder_name = FileManager.get_playlist_folder_name(playlist_id, playlist_name)
@@ -117,7 +110,7 @@ def process_playlist(
             
             success = False
             
-            if manual_link:
+            if manual:
                 # Manual YouTube link mode
                 Logger.info(f"Need YouTube link for: {track['name']} - {artist_str}")
                 youtube_url = UserInput.get_youtube_url()
@@ -125,7 +118,7 @@ def process_playlist(
                     Logger.warning(f"Skipped: {track['name']}")
                     track['manually_skipped'] = True
                     stats['skipped'] += 1
-                elif SpotdlDownloader.download_from_youtube(youtube_url, playlist_download_folder, track):
+                elif SpotiFLACDownloader.download_from_youtube(youtube_url, playlist_download_folder, track):
                     Logger.success(f"Downloaded: {track['name']}")
                     success = True
                     stats['downloaded'] += 1
@@ -134,29 +127,9 @@ def process_playlist(
                     track['unable_to_find'] = True
                     stats['failed'] += 1
             
-            elif manual_verify:
-                # Manual verification mode
-                yt_url = SpotdlDownloader.get_youtube_url(track, dont_filter=dont_filter)
-                if yt_url:
-                    Logger.info(f"YouTube match: {yt_url}")
-                
-                if UserInput.confirm_download(track['name']):
-                    if SpotdlDownloader.download_from_spotify(track, playlist_download_folder, dont_filter=dont_filter):
-                        Logger.success(f"Downloaded: {track['name']}")
-                        success = True
-                        stats['downloaded'] += 1
-                    else:
-                        Logger.error(f"Failed to download: {track['name']}")
-                        track['unable_to_find'] = True
-                        stats['failed'] += 1
-                else:
-                    Logger.warning(f"Skipped: {track['name']}")
-                    track['manually_skipped'] = True
-                    stats['skipped'] += 1
-            
             else:
                 # Automatic mode
-                success, error_msg = SpotdlDownloader.download_from_spotify(track, playlist_download_folder, dont_filter=dont_filter)
+                success, error_msg = SpotiFLACDownloader.download_from_spotify(track, playlist_download_folder, dont_filter=dont_filter)
                 if success:
                     Logger.success(f"Downloaded: {track['name']}")
                     stats['downloaded'] += 1
@@ -166,10 +139,7 @@ def process_playlist(
                     track['unable_to_find'] = True
                     stats['failed'] += 1
             
-            # Add spacing between downloads for readability
-            if idx < len(missing_tracks):
-                print()
-        
+            # Removed extra spacing after every song print for a cleaner list
         # Refresh downloads
         downloaded = FileManager.get_downloaded_songs(playlist_download_folder)
         csv_filepath = CSVManager.get_csv_filepath(playlist_id, playlist_name, playlist_download_folder)
@@ -225,9 +195,8 @@ def main():
     """
     parser = argparse.ArgumentParser(description="Check and download songs from Spotify playlists")
     parser.add_argument("--download-folder", default=Config.get_downloads_folder(), help="Folder to download songs to")
-    parser.add_argument("--manual-verify", action="store_true", help="Manually verify each YouTube link before downloading")
-    parser.add_argument("--dont-filter-results", action="store_true", help="Don't filter spotdl search results")
-    parser.add_argument("--manual-link", action="store_true", help="Manually provide YouTube links for each song")
+    parser.add_argument("--dont-filter-results", action="store_true", help="Don't filter search results")
+    parser.add_argument("--manual", "-m", action="store_true", help="Manually provide YouTube links for each song")
     
     args = parser.parse_args()
     
@@ -285,14 +254,13 @@ def main():
     
     for idx, playlist_id in enumerate(playlists, 1):
         try:
-            Logger.progress(idx, len(playlists), "processing playlists")
+            Logger.progress(idx, len(playlists), "playlists")
             
             stats = process_playlist(
                 spotify_client,
                 playlist_id,
                 args.download_folder,
-                manual_verify=args.manual_verify,
-                manual_link=args.manual_link,
+                manual=args.manual,
                 dont_filter=args.dont_filter_results
             )
             

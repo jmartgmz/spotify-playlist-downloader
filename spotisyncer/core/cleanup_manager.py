@@ -8,10 +8,11 @@ import os
 import csv
 import glob
 from typing import Set, List, Dict, Tuple, Optional
-from spotify_sync.core.csv_manager import CSVManager
-from spotify_sync.core.file_manager import FileManager
-from spotify_sync.utils.utils import UserInput, FilenameSanitizer
-from spotify_sync.core.logger import Logger
+from spotisyncer.core.csv_manager import CSVManager
+from spotisyncer.core.file_manager import FileManager
+from spotisyncer.utils.utils import UserInput, FilenameSanitizer
+from spotisyncer.core.logger import Logger
+import re
 from mutagen.easyid3 import EasyID3
 from mutagen import File as MutagenFile
 
@@ -419,9 +420,16 @@ class CleanupManager:
             if metadata is None:
                 # If we can't read metadata, fall back to filename matching as last resort
                 file_title = name.split(" - ", 1)[1].lower().strip() if " - " in name else name.lower().strip()
+                
+                def simplify(text: str) -> str:
+                    return re.sub(r'[\W_]+', '', str(text).lower()) if text else ""
+                
+                simp_file_title = simplify(file_title)
+                simp_tracked_songs = {(simplify(a), simplify(t)) for a, t in tracked_songs}
+                
                 # Check if any tracked song title matches
-                is_tracked = any(file_title == tracked_title or tracked_title in file_title 
-                               for _, tracked_title in tracked_songs if tracked_title)
+                is_tracked = any(simp_file_title == tracked_title or tracked_title in simp_file_title 
+                               for _, tracked_title in simp_tracked_songs if tracked_title)
                 if not is_tracked:
                     orphaned_files.append(file_path)
                 continue
@@ -430,18 +438,36 @@ class CleanupManager:
             file_artist = metadata['artist']
             file_title = metadata['title']
             
-            # Try exact match with artist + title
-            is_tracked = (file_artist, file_title) in tracked_songs
+            # Use regex to strip away punctuation for reliable comparisons
+            def simplify(text: str) -> str:
+                return re.sub(r'[\W_]+', '', str(text).lower()) if text else ""
+            
+            simp_file_title = simplify(file_title)
+            simp_file_artist = simplify(file_artist)
+            
+            # Reconstruct the tracked list using simplified strings dynamically
+            simp_tracked_songs = {(simplify(a), simplify(t)) for a, t in tracked_songs}
+            
+            # Try exact match with artist + title (both simplified)
+            is_tracked = (simp_file_artist, simp_file_title) in simp_tracked_songs
             
             # Also try title-only match (in case artist format differs)
             if not is_tracked:
-                is_tracked = ('', file_title) in tracked_songs
+                is_tracked = ('', simp_file_title) in simp_tracked_songs
             
             # If still not matched, try partial title match
             if not is_tracked:
-                is_tracked = any(tracked_title and (tracked_title in file_title or file_title in tracked_title)
-                               for _, tracked_title in tracked_songs if tracked_title)
+                is_tracked = any(tracked_title and (tracked_title in simp_file_title or simp_file_title in tracked_title)
+                               for _, tracked_title in simp_tracked_songs if tracked_title)
             
+            # If STILL not matched, the metadata might be localized/romanized differently than Spotify
+            # Fall back to using the physical filename (which was built from Spotify data)
+            if not is_tracked:
+                filename_title = name.split(" - ", 1)[1].lower().strip() if " - " in name else name.lower().strip()
+                simp_filename_title = simplify(filename_title)
+                is_tracked = any(simp_filename_title == tracked_title or tracked_title in simp_filename_title
+                               for _, tracked_title in simp_tracked_songs if tracked_title)
+
             if not is_tracked:
                 orphaned_files.append(file_path)
         
