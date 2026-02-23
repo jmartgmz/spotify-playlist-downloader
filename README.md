@@ -54,7 +54,7 @@ python launcher.py
 
 ```
 spotify-playlist-downloader/
-├── spotify_sync/           # Core application
+├── spotisyncer/           # Core application
 │   ├── core/              # Core functionality
 │   ├── commands/          # CLI commands
 │   └── utils/             # Utilities
@@ -114,3 +114,4 @@ Personal use only. Support artists through official channels.
 ---
 
 🎵 **Enjoy your music!**
+

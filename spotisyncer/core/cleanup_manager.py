@@ -8,10 +8,10 @@ import os
 import csv
 import glob
 from typing import Set, List, Dict, Tuple, Optional
-from spotify_sync.core.csv_manager import CSVManager
-from spotify_sync.core.file_manager import FileManager
-from spotify_sync.utils.utils import UserInput, FilenameSanitizer
-from spotify_sync.core.logger import Logger
+from spotisyncer.core.csv_manager import CSVManager
+from spotisyncer.core.file_manager import FileManager
+from spotisyncer.utils.utils import UserInput, FilenameSanitizer
+from spotisyncer.core.logger import Logger
 from mutagen.easyid3 import EasyID3
 from mutagen import File as MutagenFile
 
@@ -497,3 +497,4 @@ class CleanupManager:
                 Logger.success(f"Cleaned up {successful} orphaned file(s)")
         
         return stats
+

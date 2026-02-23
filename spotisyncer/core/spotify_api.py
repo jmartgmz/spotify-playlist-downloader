@@ -142,3 +142,4 @@ class SpotifyClient:
             return playlist_info if playlist_info and 'name' in playlist_info else None
         except Exception:
             return None
+

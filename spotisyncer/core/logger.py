@@ -151,3 +151,4 @@ class Logger:
     def set_timestamps(enabled: bool) -> None:
         """Enable or disable timestamps."""
         Logger.ENABLE_TIMESTAMPS = enabled
+

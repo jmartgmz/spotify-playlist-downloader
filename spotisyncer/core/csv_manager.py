@@ -174,3 +174,4 @@ class CSVManager:
         except Exception as e:
             print(f"Error writing CSV: {e}")
             return 0
+

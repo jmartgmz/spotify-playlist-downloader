@@ -11,7 +11,7 @@ from typing import Any, Dict, Optional
 def _get_logger():
     """Safely get logger instance, avoiding circular imports."""
     try:
-        from spotify_sync.core.logger import Logger
+        from spotisyncer.core.logger import Logger
         return Logger
     except ImportError:
         # Fallback logger for development/transition

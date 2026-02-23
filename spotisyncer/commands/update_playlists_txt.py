@@ -11,9 +11,9 @@ import os
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv
-from spotify_sync.core.logger import Logger
-from spotify_sync.utils.error_handler import ErrorHandler
-from spotify_sync.utils.config import Config
+from spotisyncer.core.logger import Logger
+from spotisyncer.utils.error_handler import ErrorHandler
+from spotisyncer.utils.config import Config
 
 # Load environment variables from .env file
 load_dotenv()
@@ -159,3 +159,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

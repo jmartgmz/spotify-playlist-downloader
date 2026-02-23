@@ -139,11 +139,11 @@ def execute_command(command_line):
         
         # Import and run the appropriate command
         if module_name == 'check':
-            from spotify_sync.commands.check import main as cmd_main
+            from spotisyncer.commands.check import main as cmd_main
         elif module_name == 'update_playlists_txt':
-            from spotify_sync.commands.update_playlists_txt import main as cmd_main
+            from spotisyncer.commands.update_playlists_txt import main as cmd_main
         elif module_name == 'update_csv':
-            from spotify_sync.commands.update_csv import main as cmd_main
+            from spotisyncer.commands.update_csv import main as cmd_main
         
         # Replace sys.argv for the command
         sys.argv = ['launcher.py'] + args
@@ -196,3 +196,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

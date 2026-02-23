@@ -52,3 +52,4 @@ class Config:
             return max(Config.MIN_CHECK_INTERVAL_MINUTES, min(Config.MAX_CHECK_INTERVAL_MINUTES, interval))
         except ValueError:
             return Config.DEFAULT_CHECK_INTERVAL_MINUTES
+

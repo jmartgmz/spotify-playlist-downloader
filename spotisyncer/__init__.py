@@ -16,8 +16,8 @@ __description__ = "Automatically sync your Spotify playlists with local download
 
 # Import core components
 try:
-    from spotify_sync.core.settings_manager import settings
-    from spotify_sync.core.logger import Logger
+    from spotisyncer.core.settings_manager import settings
+    from spotisyncer.core.logger import Logger
     
     # Configure logger with settings
     Logger.set_timestamps(settings.get('ui', 'enable_timestamps'))

@@ -17,7 +17,7 @@ from typing import Optional, Dict
 import urllib.request
 from mutagen.mp3 import MP3
 from mutagen.easyid3 import EasyID3
-from spotify_sync.utils.utils import FilenameSanitizer
+from spotisyncer.utils.utils import FilenameSanitizer
 
 
 class SpotdlDownloader:
@@ -275,3 +275,4 @@ class SpotdlDownloader:
             
         except Exception as e:
             return False, str(e)
+

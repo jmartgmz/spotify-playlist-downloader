@@ -93,3 +93,4 @@ class UserInput:
             YouTube URL entered by user, or empty string to skip
         """
         return input("    Paste YouTube URL (or press Enter to skip): ").strip()
+

@@ -5,7 +5,7 @@ Provides consistent error reporting and input validation.
 
 import os
 from typing import Optional
-from spotify_sync.core.logger import Logger
+from spotisyncer.core.logger import Logger
 
 
 class ValidationError(Exception):
@@ -109,3 +109,4 @@ class ErrorHandler:
         """
         ErrorHandler.handle_exception(exception, context)
         raise SystemExit(1)
+
