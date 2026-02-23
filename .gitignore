@@ -59,5 +59,3 @@ logs/
 .coverage
 htmlcov/
 
-# Docker volumes
-.docker-data/
